@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>6 Player Ludo - Dark Mica Edition</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
@@ -98,6 +99,12 @@
     socket.on("joined", (playerInfo) => {
         window.myPlayerId = playerInfo.id;
         console.log("I am Player ID: " + window.myPlayerId);
+    });
+
+    // Listen for the server telling us the room was destroyed
+    socket.on("roomClosed", () => {
+        alert("The host disconnected! The room has been closed.");
+        window.location.reload(); // Instantly refresh the page to reset the game
     });
 
     // Server sends updated list of players in the room
