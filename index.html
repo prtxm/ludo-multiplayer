@@ -154,14 +154,20 @@
     function startPhaserGame() {
         new Phaser.Game({
             type: Phaser.AUTO,
-            width: 1200,
-            height: 1200,
-            transparent: true,
-            parent: "game-container",
-            scene: LudoGame
+            // --- NEW SCALE MANAGER ---
+            scale: {
+                mode: Phaser.Scale.FIT, // Forces the game to fit inside its container
+                parent: 'game-ui',      // Tells it which div it lives inside
+                autoCenter: Phaser.Scale.CENTER_HORIZONTAL, 
+                width: 1200,            // Your original board width
+                height: 1200            // Your original board height
+            },
+            // -------------------------
+            scene: [LudoGame],
+            backgroundColor: "#1a1a1a" // Match your dark theme
         });
     }
-
+    
     function showNotification(message) {
         const container = document.getElementById('notification-container');
         const notif = document.createElement('div');
