@@ -1,107 +1,98 @@
 body {
     margin: 0;
     padding: 0;
+    /* Match the Desktop Mica Gradient */
     background: radial-gradient(circle at 50% 50%, #1a1b2e 0%, #0a0a0a 100%);
     font-family: 'Segoe UI', system-ui, sans-serif;
     color: white;
     height: 100vh;
-    overflow: hidden;
+    width: 100vw;
+    overflow: hidden; /* Prevent scrolling */
 }
 
-/* SETUP SCREEN MICA */
-#setup-screen {
+/* GAME UI WRAPPER */
+#game-ui {
+    display: flex;
+    flex-direction: column;
+    height: 100svh; /* Use SVH to avoid mobile address bar issues */
+    width: 100vw;
+}
+
+/* LUDO BOARD SECTION */
+#phaser-container {
+    flex: 1; /* Automatically takes all available top space */
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(20px);
+    align-items: flex-start;
+    background: transparent;
+    touch-action: none; /* Prevents accidental page scrolls during play */
 }
 
-.setup-card {
-    width: 85%;
-    padding: 30px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
+/* ROLL DICE SECTION (Bottom Only) */
+.mobile-controls-panel {
+    background: rgba(20, 20, 20, 0.9);
+    backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px 20px 25px 20px; /* Extra bottom padding for thumb room */
+    border-radius: 24px 24px 0 0;
     text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    z-index: 100;
 }
 
-.mica-input {
-    width: 100%;
-    padding: 12px;
+/* REMOVE RANK SYSTEM / SCOREBOARD FOR MOBILE */
+#scoreBoard, .rank-container, .leaderboard {
+    display: none !important;
+}
+
+/* UI ELEMENTS */
+#turnDisplay { 
+    font-size: 16px; 
+    font-weight: 600;
+    margin-bottom: 8px; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#diceDisplay { 
+    font-size: 38px; 
     margin-bottom: 12px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    color: white;
-    box-sizing: border-box;
+    font-weight: bold;
 }
 
 .action-btn {
     width: 100%;
-    padding: 14px;
+    padding: 16px;
     border: none;
-    border-radius: 8px;
-    font-weight: bold;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 18px;
     color: white;
     cursor: pointer;
+    background: #4f46e5;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
 }
 
-.join-btn { background: #4f46e5; }
-.start-game-btn { background: #00c853; margin-top: 15px; }
-
-/* PLAYER LOBBY LIST */
-.player-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    background: rgba(255,255,255,0.03);
-    margin-bottom: 5px;
-    border-radius: 6px;
+.action-btn:active {
+    transform: scale(0.95);
 }
 
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-
-/* GAME UI LAYOUT */
-#game-ui {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-#phaser-container {
-    flex: 1; /* Board occupies top space */
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-}
-
-.mobile-controls-panel {
-    background: rgba(20, 20, 20, 0.85);
-    backdrop-filter: blur(25px);
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding: 20px;
-    border-radius: 24px 24px 0 0;
-    text-align: center;
-}
-
-#turnDisplay { font-size: 18px; margin-bottom: 10px; }
-#diceDisplay { font-size: 32px; margin-bottom: 15px; }
-
-/* NOTIFICATIONS */
+/* NOTIFICATION FIX */
 .mica-notification {
     position: fixed;
     top: 20px;
-    background: rgba(40,40,40,0.9);
-    padding: 12px 20px;
-    border-radius: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(45, 45, 45, 0.95);
+    padding: 10px 20px;
+    border-radius: 50px;
     border: 1px solid rgba(255,255,255,0.1);
-    transform: translateY(-50px);
     opacity: 0;
     transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     z-index: 10000;
+    white-space: nowrap;
 }
-.mica-notification.show { transform: translateY(0); opacity: 1; }
+.mica-notification.show { 
+    transform: translateX(-50%) translateY(0); 
+    opacity: 1; 
+}
