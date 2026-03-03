@@ -108,12 +108,6 @@ body {
 .score-row:last-child { border-bottom: none; }
 .score-name { display: flex; align-items: center; gap: 8px; }
 
-/* Cheat Tools */
-.cheat-header { font-size: 12px; font-weight: 700; color: #ff5252; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 10px; letter-spacing: 1px; }
-.dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.dice-grid button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; }
-.dice-grid button:hover { background: rgba(255,255,255,0.15); }
-
 .mica-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; margin-bottom: 10px; box-sizing: border-box; font-family: 'Inter'; color: #4fc3f7; }
 .action-btn { width: 100%; border: none; border-radius: 8px; padding: 12px; cursor: pointer; font-size: 12px; font-weight: 700; font-family: 'Inter'; margin-bottom: 8px; color: white; border-bottom: 2px solid rgba(0,0,0,0.3); }
 .tp-btn { background: linear-gradient(180deg, #0078d4 0%, #005a9e 100%); }

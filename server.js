@@ -75,23 +75,14 @@ io.on("connection", (socket) => {
             const playerIndex = room.players.findIndex(p => p.socketId === socket.id);
             
             if (playerIndex !== -1) {
-                // Check if the person leaving was the Host (Player 0)
-                const isHost = (room.players[playerIndex].id === 0);
+                // A player was found in this room. 
+                // Since ANY player leaving should end the game, we delete the entire room.
+                delete rooms[roomCode];
                 
-                // Remove the player from the room's array
-                room.players.splice(playerIndex, 1);
+                // Tell ALL remaining players that the room is closed
+                io.to(roomCode).emit("roomClosed"); 
+                console.log(`Room ${roomCode} was destroyed because a player disconnected.`);
                 
-                // If the room is empty OR the host left, destroy the room entirely!
-                if (room.players.length === 0 || isHost) {
-                    delete rooms[roomCode];
-                    
-                    // Tell anyone else still in the room that the game is over
-                    io.to(roomCode).emit("roomClosed"); 
-                    console.log(`Room ${roomCode} was destroyed because host left or it is empty.`);
-                } else {
-                    // If a normal player left, just update the lobby list for everyone else
-                    io.to(roomCode).emit("updatePlayers", room.players);
-                }
                 break; // Stop searching once we found and handled the player
             }
         }

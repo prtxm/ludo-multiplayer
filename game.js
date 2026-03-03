@@ -8,9 +8,6 @@ class LudoGame extends Phaser.Scene {
     create() {
 
         window.gameScene = this;
-        // 🔥 NEW CHEAT STATES
-        this.cheatTPActive = false;
-        this.cheatTPType = null; // 'tile' or 'win'
         // --- WIN11 MICA LAYER ---
         // Creates a frosted pane behind the tiles
         this.add.rectangle(600, 600, 850, 850, 0x1a1a1a, 0.6)
@@ -429,32 +426,6 @@ class LudoGame extends Phaser.Scene {
                 playerId: window.myPlayerId,
                 pieceIndex: pieceIndex
             });
-        }
-        // 🔥 CHECK IF TELEPORT CHEAT IS ACTIVE
-        if (this.cheatTPActive) {
-            this.cheatTPActive = false; // Reset the switch
-            
-            if (this.cheatTPType === 'win') {
-                // Instant Win Teleport
-                await this.animateTo(piece, this.winPoints[player.id]);
-                piece.isFinished = true;
-                piece.inMiddle = false;
-                piece.disableInteractive();
-            } else {
-                // Specific Tile Teleport
-                let targetIdx = parseInt(document.getElementById('tp-index').value) || 0;
-                piece.pathIndex = targetIdx % this.globalOuterPath.length;
-                piece.tilesMoved = 20; // Set to a high number so it can enter the home lane later
-                piece.inMiddle = false;
-                await this.animateTo(piece, this.globalOuterPath[piece.pathIndex]);
-            }
-
-            this.arrangePieces();
-            // --- THE FIX ---
-            this.isMoving = false; // Unblock the game
-            this.diceValue = 0;    // Clear the "used" dice
-            this.nextTurn();       // Move to next player
-            return;
         }
 
         // --- REGULAR MOVE LOGIC STARTS HERE ---
@@ -946,24 +917,6 @@ class LudoGame extends Phaser.Scene {
         return g; // Important: return the object
     }
 
-    setCheatDice(value) {
-        if (this.isMoving) return;
-        this.diceValue = value;
-        const diceDisplay = document.getElementById("diceDisplay");
-        if (diceDisplay) {
-            diceDisplay.innerText = "🎲 " + this.diceValue + " (SET)";
-            diceDisplay.style.color = "#FFD700"; // Golden feedback for admin
-            setTimeout(() => diceDisplay.style.color = "white", 1000);
-        }
-        console.log("Dice Override: " + value);
-    }
-
-    setTP(type) {
-        this.cheatTPActive = true;
-        this.cheatTPType = type;
-        document.getElementById("diceDisplay").innerText = "TP: READY";
-        console.log("Teleport Primed for: " + type);
-    }
 }
 // Replace your new Phaser.Game config at the bottom with this:
 function startPhaserGame() {
