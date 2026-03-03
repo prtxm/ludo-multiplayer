@@ -255,13 +255,9 @@ class LudoGame extends Phaser.Scene {
     }
 
     createPlayers() {
-        // Create an array of IDs representing who actually joined
         let activeIds = window.activePlayers ? window.activePlayers.map(p => p.id) : [0, 1, 2, 3, 4, 5];
 
         for (let i = 0; i < 6; i++) {
-            // CRITICAL: If this player ID did not join, skip spawning their gutis!
-            if (!activeIds.includes(i)) continue;
-
             let playerName = this.colors[i].name;
             if (window.activePlayers) {
                 let joinedPlayer = window.activePlayers.find(p => p.id === i);
@@ -270,42 +266,47 @@ class LudoGame extends Phaser.Scene {
                 playerName = window.playerNames[i];
             }
 
+            // Create the player object with a NEW isActive flag
             let player = { 
                 id: i, 
                 name: playerName,
-                pieces: [] 
+                pieces: [],
+                isActive: activeIds.includes(i) 
             };
             
-            let home = this.homeCircles[i];
-            const spread = home.radius * 0.45;
+            // ONLY spawn gutis if the player actually joined
+            if (player.isActive) {
+                let home = this.homeCircles[i];
+                const spread = home.radius * 0.45;
 
-            [45, 135, 225, 315].forEach(deg => {
-                let rad = Phaser.Math.DegToRad(deg);
-                let piece = this.add.circle(
-                    home.x + Math.cos(rad) * spread,
-                    home.y + Math.sin(rad) * spread,
-                    11, 
-                    this.colors[i].value
-                )
-                .setStrokeStyle(2, 0x000000, 1) 
-                .setDepth(2000);
+                [45, 135, 225, 315].forEach(deg => {
+                    let rad = Phaser.Math.DegToRad(deg);
+                    let piece = this.add.circle(
+                        home.x + Math.cos(rad) * spread,
+                        home.y + Math.sin(rad) * spread,
+                        11, 
+                        this.colors[i].value
+                    )
+                    .setStrokeStyle(2, 0x000000, 1) 
+                    .setDepth(2000);
 
-                piece.homeX = piece.x;
-                piece.homeY = piece.y;
-                piece.playerId = i;
-                piece.pathIndex = -1;
-                piece.lapCount = 0;
-                piece.tilesMoved = 0; 
-                piece.inMiddle = false;
-                piece.middleIndex = -1;
-                piece.isFinished = false;
+                    piece.homeX = piece.x;
+                    piece.homeY = piece.y;
+                    piece.playerId = i;
+                    piece.pathIndex = -1;
+                    piece.lapCount = 0;
+                    piece.tilesMoved = 0; 
+                    piece.inMiddle = false;
+                    piece.middleIndex = -1;
+                    piece.isFinished = false;
 
-                piece.setInteractive();
-                piece.on("pointerdown", () => this.tryMove(piece));
-                player.pieces.push(piece);
-            });
+                    piece.setInteractive();
+                    piece.on("pointerdown", () => this.tryMove(piece));
+                    player.pieces.push(piece);
+                });
+            }
             
-            // Only active players get pushed to this.players array
+            // ALWAYS push the player so the array stays at length 6
             this.players.push(player);
         }
     }
@@ -731,23 +732,24 @@ class LudoGame extends Phaser.Scene {
     // --------------------
 
     nextTurn() {
-        // Calculate total active players (fallback to 6 if offline)
-        let totalActive = window.activePlayerIds ? window.activePlayerIds.length : 6;
+        let totalActive = window.activePlayers ? window.activePlayers.length : 6;
         
-        if (this.finishedRanks.length >= totalActive - 1) {
+        // End game if all but one active player has finished
+        if (this.finishedRanks.length >= totalActive - 1 && totalActive > 1) {
             document.getElementById("turnDisplay").innerText = "GAME OVER";
-            return; // End game if all but one player has finished
+            return; 
         }
-        
-        // Loop to find the next player who HAS NOT finished AND is IN THE ROOM
+
         let loopSafeguard = 0;
         do {
+            // Loop through the 6 IDs
             this.currentPlayerIndex = (this.currentPlayerIndex + 1) % 6;
             loopSafeguard++;
+            
+        // Keep skipping IF the player has already finished OR if the player is NOT active
         } while (
             loopSafeguard < 10 && 
-            (this.finishedRanks.includes(this.currentPlayerIndex) || 
-            (window.activePlayerIds && !window.activePlayerIds.includes(this.currentPlayerIndex)))
+            (this.finishedRanks.includes(this.currentPlayerIndex) || !this.players[this.currentPlayerIndex].isActive)
         );
 
         this.updateTurnUI();
