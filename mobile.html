@@ -124,23 +124,15 @@
 
     function startPhaserGame() {
         const screenW = window.innerWidth;
-        // Calculate scale to fit 1200px board into screen width
         const scaleVal = screenW / 1200;
         
         new Phaser.Game({
             type: Phaser.AUTO,
-            render: {
-                antialias: true,
-                pixelArt: false,
-                roundPixels: true // Helps with sharpness
-            },
             scale: {
                 mode: Phaser.Scale.NONE,
                 parent: 'phaser-container',
                 width: screenW,
-                height: screenW, // Keeps board square
-                // This fix prevents blurriness on high-res mobile screens
-                resolution: window.devicePixelRatio || 1 
+                height: screenW
             },
             scene: [LudoGame],
             backgroundColor: "#00000000",
