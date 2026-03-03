@@ -124,15 +124,24 @@
 
     function startPhaserGame() {
         const screenW = window.innerWidth;
-        const scaleVal = screenW / 1200;
+        // Use a safe height for the board (usually square)
+        const boardSize = screenW; 
         
         new Phaser.Game({
             type: Phaser.AUTO,
+            parent: 'phaser-container',
+            // --- PIXEL PERFECT FIX ---
+            render: {
+                antialias: true,
+                pixelArt: false,
+                roundPixels: true
+            },
             scale: {
                 mode: Phaser.Scale.NONE,
-                parent: 'phaser-container',
                 width: screenW,
-                height: screenW
+                height: screenW,
+                // This line removes the blur on mobile screens
+                resolution: window.devicePixelRatio || 1 
             },
             scene: [LudoGame],
             backgroundColor: "#00000000",
@@ -140,18 +149,24 @@
             callbacks: {
                 postBoot: (game) => {
                     const scene = game.scene.scenes[0];
-                    scene.cameras.main.setZoom(scaleVal);
+                    // Calculate exact zoom to fit your 1200px game logic into mobile width
+                    const zoomFactor = screenW / 1200;
+                    scene.cameras.main.setZoom(zoomFactor);
                     scene.cameras.main.centerOn(600, 600);
                 }
             }
         });
     }
 
-    // Fast Touch for Mobile
+    // --- MOBILE BUTTON INTERACTION FIX ---
+    // Standard 'click' can be laggy or blocked by Phaser on mobile. 
+    // This ensures the Roll button works instantly.
     document.addEventListener('touchstart', (e) => {
-        if (e.target.id === 'rollButton' && !e.target.disabled) {
-            e.preventDefault();
-            e.target.click();
+        if (e.target.id === 'rollButton' || e.target.id === 'rollBtn') {
+            if (!e.target.disabled && e.target.style.display !== 'none') {
+                e.preventDefault();
+                e.target.click(); // Triggers the dice logic in game.js
+            }
         }
     }, {passive: false});
 </script>

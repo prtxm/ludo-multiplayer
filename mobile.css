@@ -65,31 +65,74 @@ body {
 
 .dot { width: 10px; height: 10px; border-radius: 50%; }
 
-/* GAME UI LAYOUT */
+/* --- GAME UI CONTAINER --- */
 #game-ui {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100svh; /* svh handles mobile browser bars better */
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
+/* --- THE BOARD (Top 60-70% of screen) --- */
 #phaser-container {
-    flex: 1; /* Board occupies top space */
+    flex: 1; /* Automatically takes all available space */
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    overflow: hidden;
+    touch-action: none; /* Prevents the whole page from bouncing while playing */
 }
 
+/* --- THE CONTROLS (Bottom Panel) --- */
 .mobile-controls-panel {
-    background: rgba(20, 20, 20, 0.85);
+    background: rgba(20, 20, 20, 0.9);
     backdrop-filter: blur(25px);
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px 20px 30px 20px; /* Extra bottom padding for thumb reach */
     border-radius: 24px 24px 0 0;
     text-align: center;
+    z-index: 100; /* Ensures it stays above the game canvas */
 }
 
-#turnDisplay { font-size: 18px; margin-bottom: 10px; }
-#diceDisplay { font-size: 32px; margin-bottom: 15px; }
+/* UI Typography */
+#turnDisplay { 
+    font-size: 18px; 
+    font-weight: 700; 
+    margin-bottom: 5px; 
+    color: #4fc3f7;
+    text-transform: uppercase;
+}
+
+#diceDisplay { 
+    font-size: 40px; 
+    margin: 10px 0; 
+    font-weight: bold;
+    display: block;
+}
+
+/* The Big Roll Button */
+.action-btn.roll-btn {
+    width: 100%;
+    max-width: 300px;
+    padding: 18px;
+    border: none;
+    border-radius: 14px;
+    font-size: 20px;
+    font-weight: 800;
+    color: white;
+    background: #4f46e5;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    cursor: pointer;
+    /* Prevent blue tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+}
+
+.action-btn.roll-btn:active {
+    transform: scale(0.96);
+}
 
 /* NOTIFICATIONS */
 .mica-notification {
