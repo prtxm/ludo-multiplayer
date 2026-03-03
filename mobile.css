@@ -37,14 +37,18 @@ body {
     box-sizing: border-box;
 }
 
-.action-btn {
-    width: 100%;
-    padding: 15px;
+..action-btn {
+    width: 90%;
+    padding: 18px; /* Bigger touch target for fingers */
     background: #4f46e5;
     border: none;
     color: white;
     font-weight: bold;
-    border-radius: 10px;
+    border-radius: 12px;
+    font-size: 18px;
+    /* Standard button behavior */
+    cursor: pointer;
+    pointer-events: auto !important;
 }
 
 /* GAME LAYOUT */
@@ -55,20 +59,27 @@ body {
 }
 
 #phaser-container {
-    flex: 6; /* 60% height */
+    flex: 6; 
     width: 100vw;
+    /* Ensure the game doesn't overlap the buttons below */
+    overflow: hidden; 
+    position: relative;
+    z-index: 1; 
 }
 
 .mobile-controls {
-    flex: 4; /* 40% height */
+    flex: 4;
     background: #151515;
-    border-top: 1px solid #333;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-evenly;
     padding: 20px;
-    border-radius: 25px 25px 0 0;
+    position: relative;
+    /* This forces the buttons to stay "above" the game canvas for taps */
+    z-index: 999 !important; 
+    pointer-events: auto !important; 
 }
 
 #turnDisplay { margin: 0; font-size: 20px; color: #4fc3f7; }

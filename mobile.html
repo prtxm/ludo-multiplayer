@@ -105,15 +105,25 @@
         new Phaser.Game({
             type: Phaser.AUTO,
             scale: {
-                mode: Phaser.Scale.FIT,
+                // "ENVELOP" expands the board until it hits the edges with NO gaps
+                mode: Phaser.Scale.ENVELOP, 
                 parent: 'phaser-container',
                 autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1200, height: 1200
+                width: 1200, 
+                height: 1200
             },
             scene: [LudoGame],
             backgroundColor: "#111"
         });
     }
+    
+    // Add this inside your script tag after the game starts
+    document.getElementById('rollButton').addEventListener('touchstart', function(e) {
+        // This triggers the roll instantly when your finger touches the screen
+        if (!this.disabled) {
+            this.click(); 
+        }
+    }, {passive: true});
 </script>
 </body>
 </html>
