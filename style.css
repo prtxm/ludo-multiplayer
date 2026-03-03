@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Segoe+UI:wght@400;600;700&display=swap');
+
+body {
+    margin: 0;
+    /* Windows 11 Bloom-style dark background */
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
+        #0a0a0a;
+    font-family: 'Segoe UI', 'Inter', sans-serif;
+    color: white;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* --- SETUP SCREEN --- */
+#setup-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.setup-card {
+    background: linear-gradient(135deg, rgba(32, 32, 32, 0.9) 0%, rgba(20, 20, 20, 0.9) 100%);
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    text-align: center;
+    width: 400px;
+}
+
+.setup-card h1 { margin: 0 0 10px; font-size: 28px; color: #fff; }
+.setup-card p { margin: 0 0 24px; color: rgba(255, 255, 255, 0.6); }
+
+.input-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 16px;
+    border-radius: 12px;
+}
+
+.input-group input {
+    border: none; background: transparent; color: white;
+    font-family: 'Inter', sans-serif; font-size: 16px; width: 100%; outline: none;
+}
+
+#startBtn {
+    background: linear-gradient(180deg, #1a73e8 0%, #1557b0 100%);
+    color: white; border: none; border-bottom: 2px solid rgba(0,0,0,0.4);
+    padding: 14px 32px; font-size: 16px; font-weight: 600; font-family: 'Segoe UI', sans-serif;
+    border-radius: 100px; cursor: pointer; transition: all 0.2s; width: 100%; letter-spacing: 1px;
+}
+#startBtn:active { transform: scale(0.97); }
+
+/* --- MICA PANELS (Win 11 + Google Hybrid) --- */
+.mica-panel {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(32, 32, 32, 0.75) 0%, rgba(20, 20, 20, 0.85) 100%);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+}
+
+#ui-panel { top: 30px; left: 30px; width: 240px; display: flex; flex-direction: column; gap: 16px; }
+#cheat-window { top: 30px; right: 30px; width: 220px; }
+
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); font-weight: 600; }
+
+#turnDisplay { font-size: 18px; font-weight: 700; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+
+#diceDisplay {
+    font-size: 52px; height: 90px; border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex; align-items: center; justify-content: center;
+}
+
+#rollBtn {
+    background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+    color: white; border: none; border-bottom: 2px solid rgba(0,0,0,0.3);
+    padding: 14px; border-radius: 100px; font-weight: 700; font-size: 14px;
+    font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s;
+    letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+#rollBtn:active { transform: scale(0.97); }
+
+.mica-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 5px 0; width: 100%; }
+
+/* Scoreboard */
+.score-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14px; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.score-row:last-child { border-bottom: none; }
+.score-name { display: flex; align-items: center; gap: 8px; }
+
+/* Cheat Tools */
+.cheat-header { font-size: 12px; font-weight: 700; color: #ff5252; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 10px; letter-spacing: 1px; }
+.dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.dice-grid button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; }
+.dice-grid button:hover { background: rgba(255,255,255,0.15); }
+
+.mica-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; margin-bottom: 10px; box-sizing: border-box; font-family: 'Inter'; color: #4fc3f7; }
+.action-btn { width: 100%; border: none; border-radius: 8px; padding: 12px; cursor: pointer; font-size: 12px; font-weight: 700; font-family: 'Inter'; margin-bottom: 8px; color: white; border-bottom: 2px solid rgba(0,0,0,0.3); }
+.tp-btn { background: linear-gradient(180deg, #0078d4 0%, #005a9e 100%); }
+.win-btn { background: linear-gradient(180deg, #e81123 0%, #c8102e 100%); }
+
+#game-container {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+canvas { filter: drop-shadow(0 0 0 transparent) !important; }
