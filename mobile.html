@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Ludo Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Ludo Mobile - Dark Mica</title>
     <link rel="stylesheet" href="mobile.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -15,24 +15,31 @@
 <div id="setup-screen">
     <div class="setup-card">
         <h1>LUDO MOBILE</h1>
-        <div class="input-group">
+        <p>Enter your name and a Room Code</p>
+        
+        <div class="input-grid">
             <input type="text" id="playerName" placeholder="Your Name" class="mica-input">
             <input type="text" id="roomCode" placeholder="Room Code" class="mica-input">
         </div>
-        <button class="action-btn" onclick="joinMultiplayerRoom()">JOIN ROOM</button>
+
+        <button class="action-btn join-btn" onclick="joinMultiplayerRoom()">JOIN / CREATE ROOM</button>
+        
         <div id="lobby-status"></div>
         <div id="player-list"></div>
-        <button id="start-btn" class="action-btn" style="display:none; margin-top:15px; background: #00c853;" onclick="startMultiplayerGame()">START GAME</button>
+
+        <button id="start-btn" class="action-btn start-game-btn" style="display:none;" onclick="startMultiplayerGame()">START GAME</button>
     </div>
 </div>
 
 <div id="game-ui" style="display: none;">
     <div id="phaser-container"></div>
     
-    <div class="mobile-controls">
-        <h2 id="turnDisplay">Waiting...</h2>
-        <div id="diceDisplay">🎲 --</div>
-        <button id="rollButton" class="action-btn">ROLL DICE</button>
+    <div class="mobile-controls-panel">
+        <div class="mica-inner">
+            <h2 id="turnDisplay">Waiting for Host...</h2>
+            <div id="diceDisplay">🎲 --</div>
+            <button id="rollButton" class="action-btn roll-btn">ROLL DICE</button>
+        </div>
     </div>
 </div>
 
@@ -42,36 +49,50 @@
     window.myPlayerId = null;
     window.myRoomCode = null;
 
-    function showNotification(msg) {
+    function showNotification(message) {
         const container = document.getElementById('notification-container');
-        const n = document.createElement('div');
-        n.className = 'mica-notif';
-        n.innerText = msg;
-        container.appendChild(n);
-        setTimeout(() => n.classList.add('show'), 10);
-        setTimeout(() => { n.classList.remove('show'); setTimeout(() => n.remove(), 300); }, 3000);
+        const notif = document.createElement('div');
+        notif.className = 'mica-notification';
+        notif.innerText = message;
+        container.appendChild(notif);
+        setTimeout(() => notif.classList.add('show'), 10);
+        setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => notif.remove(), 300); 
+        }, 3500);
     }
 
     function joinMultiplayerRoom() {
         const name = document.getElementById("playerName").value.trim();
         const code = document.getElementById("roomCode").value.trim();
-        if(!name || !code) return showNotification("Enter Name & Code!");
+        if(!name || !code) return showNotification("Please fill all fields!");
         window.myRoomCode = code;
         socket.emit("joinRoom", { playerName: name, roomCode: code });
     }
 
     socket.on("joined", (info) => {
         window.myPlayerId = info.id;
-        document.getElementById("lobby-status").innerText = `Joined Room: ${window.myRoomCode}`;
+        showNotification("Lobby Joined!");
+        document.getElementById("lobby-status").innerText = `Room: ${window.myRoomCode}`;
     });
 
     socket.on("updatePlayers", (players) => {
         const list = document.getElementById("player-list");
-        list.innerHTML = players.map(p => `<div class="p-item">${p.name} ${p.id === 0 ? '(Host)' : ''}</div>`).join('');
-        if(window.myPlayerId === 0 && players.length >= 2) {
+        list.innerHTML = players.map(p => `
+            <div class="player-item">
+                <span class="dot" style="background:${getPlayerColor(p.id)}"></span>
+                ${p.name} ${p.id === 0 ? '<b>(HOST)</b>' : ''}
+            </div>
+        `).join('');
+        
+        if (window.myPlayerId === 0 && players.length >= 2) {
             document.getElementById("start-btn").style.display = "block";
         }
     });
+
+    function getPlayerColor(id) {
+        return ["#ff0000", "#00c853", "#ff6f00", "#00bcd4", "#ffeb3b", "#9c27b0"][id];
+    }
 
     function startMultiplayerGame() {
         socket.emit("startGame", window.myRoomCode);
@@ -85,7 +106,7 @@
     });
 
     socket.on("roomClosed", () => {
-        alert("Room Closed!");
+        alert("Host disconnected. Room closed.");
         window.location.reload();
     });
 
@@ -102,28 +123,37 @@
     });
 
     function startPhaserGame() {
+        const screenW = window.innerWidth;
+        const scaleVal = screenW / 1200;
+        
         new Phaser.Game({
             type: Phaser.AUTO,
             scale: {
-                // "ENVELOP" expands the board until it hits the edges with NO gaps
-                mode: Phaser.Scale.ENVELOP, 
+                mode: Phaser.Scale.NONE,
                 parent: 'phaser-container',
-                autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1200, 
-                height: 1200
+                width: screenW,
+                height: screenW
             },
             scene: [LudoGame],
-            backgroundColor: "#111"
+            backgroundColor: "#00000000",
+            transparent: true,
+            callbacks: {
+                postBoot: (game) => {
+                    const scene = game.scene.scenes[0];
+                    scene.cameras.main.setZoom(scaleVal);
+                    scene.cameras.main.centerOn(600, 600);
+                }
+            }
         });
     }
-    
-    // Add this inside your script tag after the game starts
-    document.getElementById('rollButton').addEventListener('touchstart', function(e) {
-        // This triggers the roll instantly when your finger touches the screen
-        if (!this.disabled) {
-            this.click(); 
+
+    // Fast Touch for Mobile
+    document.addEventListener('touchstart', (e) => {
+        if (e.target.id === 'rollButton' && !e.target.disabled) {
+            e.preventDefault();
+            e.target.click();
         }
-    }, {passive: true});
+    }, {passive: false});
 </script>
 </body>
 </html>
