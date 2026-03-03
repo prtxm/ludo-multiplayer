@@ -1,169 +1,82 @@
 body {
     margin: 0;
     padding: 0;
-    background: radial-gradient(circle at 50% 50%, #1a1b2e 0%, #0a0a0a 100%);
+    background: #0a0a0a;
     font-family: 'Segoe UI', system-ui, sans-serif;
     color: white;
     height: 100vh;
+    width: 100vw;
     overflow: hidden;
 }
 
-/* SETUP SCREEN MICA */
-#setup-screen {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(20px);
-}
-
-.setup-card {
-    width: 85%;
-    padding: 30px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-}
-
-.mica-input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    color: white;
-    box-sizing: border-box;
-}
-
-.action-btn {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    color: white;
-    cursor: pointer;
-}
-
-.join-btn { background: #4f46e5; }
-.start-game-btn { background: #00c853; margin-top: 15px; }
-
-/* PLAYER LOBBY LIST */
-.player-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    background: rgba(255,255,255,0.03);
-    margin-bottom: 5px;
-    border-radius: 6px;
-}
-
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-
-/* --- GAME UI WRAPPER --- */
+/* GAME LAYOUT */
 #game-ui {
     display: flex;
     flex-direction: column;
-    height: 100svh; /* Locks to exact mobile screen height */
+    height: 100vh;
     width: 100vw;
-    position: fixed;
-    top: 0;
-    left: 0;
-    overflow: hidden;
-    background: radial-gradient(circle at 50% 50%, #1a1b2e 0%, #0a0a0a 100%);
 }
 
-/* --- THE LUDO BOARD (ENLARGED) --- */
+/* 1. Enlarged Ludo Board */
 #phaser-container {
-    flex: 1; /* Takes up all available space above the buttons */
+    flex: 1; /* Takes all available space */
     width: 100vw;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
     z-index: 1;
 }
 
-/* Fix for the canvas itself */
 canvas {
     max-width: 100% !important;
     max-height: 100% !important;
-    object-fit: contain;
 }
 
-/* --- THE CONTROL PANEL (BOTTOM) --- */
-.mobile-controls-panel {
+/* 2. Compact Bottom Footer (Dice Controls) */
+.mobile-footer {
     background: rgba(20, 20, 20, 0.95);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(15px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 15px 20px 35px 20px; /* Extra bottom padding for mobile home-bars */
-    text-align: center;
-    z-index: 100; /* Forces buttons to be above the game layer */
-    position: relative;
-    pointer-events: auto !important; /* Ensures the panel accepts clicks */
+    padding: 10px 15px 30px 15px; /* Bottom padding for mobile handles */
+    z-index: 100;
 }
 
-/* --- ELEMENTS VISIBILITY --- */
-#turnDisplay { 
-    font-size: 18px; 
-    font-weight: 700; 
-    margin: 0 0 10px 0;
+.footer-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+#turnDisplay {
+    font-size: 14px;
+    font-weight: 700;
     color: #4fc3f7;
+    margin-bottom: 8px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    text-align: center;
 }
 
-#diceDisplay { 
-    font-size: 42px; 
-    margin: 10px 0; 
-    font-weight: 800;
-    display: block;
+#diceDisplay {
+    font-size: 32px;
+    background: rgba(255,255,255,0.05);
+    padding: 10px 20px;
+    border-radius: 12px;
 }
 
-/* The Working Roll Button */
-.action-btn.roll-btn {
-    width: 100%;
-    max-width: 320px;
-    padding: 20px;
-    border: none;
-    border-radius: 15px;
-    font-size: 22px;
-    font-weight: 800;
-    color: white;
+.roll-btn {
+    flex: 1;
     background: #4f46e5;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    cursor: pointer;
-    pointer-events: auto !important;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 0.1s;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 800;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-.action-btn.roll-btn:active {
-    transform: scale(0.95);
-    filter: brightness(1.2);
-}
-
-/* Hide non-essential desktop elements to save mobile space */
-#scoreBoard, .rank-container {
-    display: none !important;
-}
-
-/* NOTIFICATIONS */
-.mica-notification {
-    position: fixed;
-    top: 20px;
-    background: rgba(40,40,40,0.9);
-    padding: 12px 20px;
-    border-radius: 30px;
-    border: 1px solid rgba(255,255,255,0.1);
-    transform: translateY(-50px);
-    opacity: 0;
-    transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-    z-index: 10000;
-}
-.mica-notification.show { transform: translateY(0); opacity: 1; }
+/* HOME UI (Keep working styles) */
+.setup-card { padding: 30px; margin: 20px; background: #1a1a1a; border-radius: 20px; text-align: center; }
+.mica-input { width: 90%; padding: 12px; margin-bottom: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 8px; }
+.p-item { padding: 8px; background: rgba(255,255,255,0.05); margin-top: 5px; border-radius: 5px; }

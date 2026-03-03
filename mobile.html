@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Ludo Mobile - Dark Mica</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ludo Mobile - Pro Edition</title>
     <link rel="stylesheet" href="mobile.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -13,30 +13,25 @@
 <div id="notification-container"></div>
 
 <div id="setup-screen">
-    <div class="setup-card">
+    <div class="setup-card mica-effect">
         <h1>LUDO MOBILE</h1>
-        <p>Enter your name and a Room Code</p>
-        
         <div class="input-grid">
             <input type="text" id="playerName" placeholder="Your Name" class="mica-input">
             <input type="text" id="roomCode" placeholder="Room Code" class="mica-input">
         </div>
-
         <button class="action-btn join-btn" onclick="joinMultiplayerRoom()">JOIN / CREATE ROOM</button>
-        
         <div id="lobby-status"></div>
         <div id="player-list"></div>
-
-        <button id="start-btn" class="action-btn start-game-btn" style="display:none;" onclick="startMultiplayerGame()">START GAME</button>
+        <button id="start-btn" class="action-btn start-btn" style="display:none;" onclick="startMultiplayerGame()">START GAME</button>
     </div>
 </div>
 
 <div id="game-ui" style="display: none;">
     <div id="phaser-container"></div>
     
-    <div class="mobile-controls-panel">
-        <div class="mica-inner">
-            <h2 id="turnDisplay">Waiting for Host...</h2>
+    <div class="mobile-footer">
+        <div id="turnDisplay">Waiting...</div>
+        <div class="footer-controls">
             <div id="diceDisplay">🎲 --</div>
             <button id="rollButton" class="action-btn roll-btn">ROLL DICE</button>
         </div>
@@ -49,65 +44,29 @@
     window.myPlayerId = null;
     window.myRoomCode = null;
 
-    function showNotification(message) {
-        const container = document.getElementById('notification-container');
-        const notif = document.createElement('div');
-        notif.className = 'mica-notification';
-        notif.innerText = message;
-        container.appendChild(notif);
-        setTimeout(() => notif.classList.add('show'), 10);
-        setTimeout(() => {
-            notif.classList.remove('show');
-            setTimeout(() => notif.remove(), 300); 
-        }, 3500);
-    }
-
+    // --- RE-USE YOUR JOINING LOGIC ---
     function joinMultiplayerRoom() {
         const name = document.getElementById("playerName").value.trim();
         const code = document.getElementById("roomCode").value.trim();
-        if(!name || !code) return showNotification("Please fill all fields!");
+        if(!name || !code) return;
         window.myRoomCode = code;
         socket.emit("joinRoom", { playerName: name, roomCode: code });
     }
 
-    socket.on("joined", (info) => {
-        window.myPlayerId = info.id;
-        showNotification("Lobby Joined!");
-        document.getElementById("lobby-status").innerText = `Room: ${window.myRoomCode}`;
-    });
-
+    socket.on("joined", (info) => { window.myPlayerId = info.id; });
     socket.on("updatePlayers", (players) => {
         const list = document.getElementById("player-list");
-        list.innerHTML = players.map(p => `
-            <div class="player-item">
-                <span class="dot" style="background:${getPlayerColor(p.id)}"></span>
-                ${p.name} ${p.id === 0 ? '<b>(HOST)</b>' : ''}
-            </div>
-        `).join('');
-        
-        if (window.myPlayerId === 0 && players.length >= 2) {
-            document.getElementById("start-btn").style.display = "block";
-        }
+        list.innerHTML = players.map(p => `<div class='p-item'>${p.name}</div>`).join('');
+        if(window.myPlayerId === 0 && players.length >= 2) document.getElementById("start-btn").style.display = "block";
     });
 
-    function getPlayerColor(id) {
-        return ["#ff0000", "#00c853", "#ff6f00", "#00bcd4", "#ffeb3b", "#9c27b0"][id];
-    }
-
-    function startMultiplayerGame() {
-        socket.emit("startGame", window.myRoomCode);
-    }
+    function startMultiplayerGame() { socket.emit("startGame", window.myRoomCode); }
 
     socket.on("gameStarted", (playersData) => {
         window.activePlayers = playersData;
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('game-ui').style.display = 'flex';
         startPhaserGame();
-    });
-
-    socket.on("roomClosed", () => {
-        alert("Host disconnected. Room closed.");
-        window.location.reload();
     });
 
     socket.on("diceRolled", ({ diceValue, playerId }) => {
@@ -122,59 +81,34 @@
         if (window.gameScene) window.gameScene.receivePieceMove(playerId, pieceIndex);
     });
 
+    // --- ENLARGED BOARD FIX ---
     function startPhaserGame() {
-        const screenW = window.innerWidth;
-        
-        const config = {
+        new Phaser.Game({
             type: Phaser.AUTO,
             parent: 'phaser-container',
-            // --- CRYSTAL CLEAR RENDERING ---
-            render: {
-                antialias: true,
-                pixelArt: false,
-                roundPixels: true
-            },
-            scale: {
-                mode: Phaser.Scale.FIT, // Use FIT to ensure the 1200px board hits edges
-                autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1200, 
-                height: 1200,
-                // This line removes the blur on mobile screens
-                resolution: window.devicePixelRatio || 1 
-            },
-            scene: [LudoGame],
-            backgroundColor: "#00000000",
             transparent: true,
-            callbacks: {
-                postBoot: (game) => {
-                    // Sync the roll button specifically for mobile touch
-                    const btn = document.getElementById('rollButton');
-                    if (btn) {
-                        btn.addEventListener('touchstart', (e) => {
-                            if (!btn.disabled && btn.style.display !== 'none') {
-                                e.preventDefault();
-                                btn.click();
-                            }
-                        }, { passive: false });
-                    }
-                }
-            }
-        };
-
-        new Phaser.Game(config);
+            render: { antialias: true, roundPixels: true },
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1200, height: 1200,
+                resolution: window.devicePixelRatio || 1
+            },
+            scene: [LudoGame]
+        });
     }
 
-    // --- MOBILE BUTTON INTERACTION FIX ---
-    // Standard 'click' can be laggy or blocked by Phaser on mobile. 
-    // This ensures the Roll button works instantly.
+    // --- TOUCH INTERACTION FIX ---
+    // Forces the button to click even if the game canvas is on top
     document.addEventListener('touchstart', (e) => {
-        if (e.target.id === 'rollButton' || e.target.id === 'rollBtn') {
-            if (!e.target.disabled && e.target.style.display !== 'none') {
+        const btn = document.getElementById('rollButton');
+        if (e.target === btn || btn?.contains(e.target)) {
+            if (!btn.disabled && btn.style.display !== 'none') {
                 e.preventDefault();
-                e.target.click(); // Triggers the dice logic in game.js
+                btn.click();
             }
         }
-    }, {passive: false});
+    }, { passive: false });
 </script>
 </body>
 </html>
