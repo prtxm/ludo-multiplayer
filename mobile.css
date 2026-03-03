@@ -65,73 +65,92 @@ body {
 
 .dot { width: 10px; height: 10px; border-radius: 50%; }
 
-/* --- GAME UI CONTAINER --- */
+/* --- GAME UI WRAPPER --- */
 #game-ui {
     display: flex;
     flex-direction: column;
-    height: 100svh; /* svh handles mobile browser bars better */
+    height: 100svh; /* Locks to exact mobile screen height */
     width: 100vw;
     position: fixed;
     top: 0;
     left: 0;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #1a1b2e 0%, #0a0a0a 100%);
 }
 
-/* --- THE BOARD (Top 60-70% of screen) --- */
+/* --- THE LUDO BOARD (ENLARGED) --- */
 #phaser-container {
-    flex: 1; /* Automatically takes all available space */
+    flex: 1; /* Takes up all available space above the buttons */
+    width: 100vw;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     overflow: hidden;
-    touch-action: none; /* Prevents the whole page from bouncing while playing */
+    z-index: 1;
 }
 
-/* --- THE CONTROLS (Bottom Panel) --- */
+/* Fix for the canvas itself */
+canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain;
+}
+
+/* --- THE CONTROL PANEL (BOTTOM) --- */
 .mobile-controls-panel {
-    background: rgba(20, 20, 20, 0.9);
-    backdrop-filter: blur(25px);
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 15px 20px 30px 20px; /* Extra bottom padding for thumb reach */
-    border-radius: 24px 24px 0 0;
+    padding: 15px 20px 35px 20px; /* Extra bottom padding for mobile home-bars */
     text-align: center;
-    z-index: 100; /* Ensures it stays above the game canvas */
+    z-index: 100; /* Forces buttons to be above the game layer */
+    position: relative;
+    pointer-events: auto !important; /* Ensures the panel accepts clicks */
 }
 
-/* UI Typography */
+/* --- ELEMENTS VISIBILITY --- */
 #turnDisplay { 
     font-size: 18px; 
     font-weight: 700; 
-    margin-bottom: 5px; 
+    margin: 0 0 10px 0;
     color: #4fc3f7;
     text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 #diceDisplay { 
-    font-size: 40px; 
+    font-size: 42px; 
     margin: 10px 0; 
-    font-weight: bold;
+    font-weight: 800;
     display: block;
 }
 
-/* The Big Roll Button */
+/* The Working Roll Button */
 .action-btn.roll-btn {
     width: 100%;
-    max-width: 300px;
-    padding: 18px;
+    max-width: 320px;
+    padding: 20px;
     border: none;
-    border-radius: 14px;
-    font-size: 20px;
+    border-radius: 15px;
+    font-size: 22px;
     font-weight: 800;
     color: white;
     background: #4f46e5;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     cursor: pointer;
-    /* Prevent blue tap highlight on mobile */
+    pointer-events: auto !important;
     -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s;
 }
 
 .action-btn.roll-btn:active {
-    transform: scale(0.96);
+    transform: scale(0.95);
+    filter: brightness(1.2);
+}
+
+/* Hide non-essential desktop elements to save mobile space */
+#scoreBoard, .rank-container {
+    display: none !important;
 }
 
 /* NOTIFICATIONS */

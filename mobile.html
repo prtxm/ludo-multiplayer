@@ -124,22 +124,21 @@
 
     function startPhaserGame() {
         const screenW = window.innerWidth;
-        // Use a safe height for the board (usually square)
-        const boardSize = screenW; 
         
-        new Phaser.Game({
+        const config = {
             type: Phaser.AUTO,
             parent: 'phaser-container',
-            // --- PIXEL PERFECT FIX ---
+            // --- CRYSTAL CLEAR RENDERING ---
             render: {
                 antialias: true,
                 pixelArt: false,
                 roundPixels: true
             },
             scale: {
-                mode: Phaser.Scale.NONE,
-                width: screenW,
-                height: screenW,
+                mode: Phaser.Scale.FIT, // Use FIT to ensure the 1200px board hits edges
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1200, 
+                height: 1200,
                 // This line removes the blur on mobile screens
                 resolution: window.devicePixelRatio || 1 
             },
@@ -148,14 +147,21 @@
             transparent: true,
             callbacks: {
                 postBoot: (game) => {
-                    const scene = game.scene.scenes[0];
-                    // Calculate exact zoom to fit your 1200px game logic into mobile width
-                    const zoomFactor = screenW / 1200;
-                    scene.cameras.main.setZoom(zoomFactor);
-                    scene.cameras.main.centerOn(600, 600);
+                    // Sync the roll button specifically for mobile touch
+                    const btn = document.getElementById('rollButton');
+                    if (btn) {
+                        btn.addEventListener('touchstart', (e) => {
+                            if (!btn.disabled && btn.style.display !== 'none') {
+                                e.preventDefault();
+                                btn.click();
+                            }
+                        }, { passive: false });
+                    }
                 }
             }
-        });
+        };
+
+        new Phaser.Game(config);
     }
 
     // --- MOBILE BUTTON INTERACTION FIX ---
