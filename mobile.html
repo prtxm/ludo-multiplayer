@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ludo Mobile</title>
+    <link rel="stylesheet" href="mobile.css">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+<div id="notification-container"></div>
+
+<div id="setup-screen">
+    <div class="setup-card">
+        <h1>LUDO MOBILE</h1>
+        <div class="input-group">
+            <input type="text" id="playerName" placeholder="Your Name" class="mica-input">
+            <input type="text" id="roomCode" placeholder="Room Code" class="mica-input">
+        </div>
+        <button class="action-btn" onclick="joinMultiplayerRoom()">JOIN ROOM</button>
+        <div id="lobby-status"></div>
+        <div id="player-list"></div>
+        <button id="start-btn" class="action-btn" style="display:none; margin-top:15px; background: #00c853;" onclick="startMultiplayerGame()">START GAME</button>
+    </div>
+</div>
+
+<div id="game-ui" style="display: none;">
+    <div id="phaser-container"></div>
+    
+    <div class="mobile-controls">
+        <h2 id="turnDisplay">Waiting...</h2>
+        <div id="diceDisplay">🎲 --</div>
+        <button id="rollButton" class="action-btn">ROLL DICE</button>
+    </div>
+</div>
+
+<script src="game.js"></script>
+<script>
+    const socket = io();
+    window.myPlayerId = null;
+    window.myRoomCode = null;
+
+    function showNotification(msg) {
+        const container = document.getElementById('notification-container');
+        const n = document.createElement('div');
+        n.className = 'mica-notif';
+        n.innerText = msg;
+        container.appendChild(n);
+        setTimeout(() => n.classList.add('show'), 10);
+        setTimeout(() => { n.classList.remove('show'); setTimeout(() => n.remove(), 300); }, 3000);
+    }
+
+    function joinMultiplayerRoom() {
+        const name = document.getElementById("playerName").value.trim();
+        const code = document.getElementById("roomCode").value.trim();
+        if(!name || !code) return showNotification("Enter Name & Code!");
+        window.myRoomCode = code;
+        socket.emit("joinRoom", { playerName: name, roomCode: code });
+    }
+
+    socket.on("joined", (info) => {
+        window.myPlayerId = info.id;
+        document.getElementById("lobby-status").innerText = `Joined Room: ${window.myRoomCode}`;
+    });
+
+    socket.on("updatePlayers", (players) => {
+        const list = document.getElementById("player-list");
+        list.innerHTML = players.map(p => `<div class="p-item">${p.name} ${p.id === 0 ? '(Host)' : ''}</div>`).join('');
+        if(window.myPlayerId === 0 && players.length >= 2) {
+            document.getElementById("start-btn").style.display = "block";
+        }
+    });
+
+    function startMultiplayerGame() {
+        socket.emit("startGame", window.myRoomCode);
+    }
+
+    socket.on("gameStarted", (playersData) => {
+        window.activePlayers = playersData;
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'flex';
+        startPhaserGame();
+    });
+
+    socket.on("roomClosed", () => {
+        alert("Room Closed!");
+        window.location.reload();
+    });
+
+    socket.on("diceRolled", ({ diceValue, playerId }) => {
+        if (window.gameScene) {
+            window.gameScene.currentPlayerIndex = playerId;
+            window.gameScene.updateTurnUI();
+            window.gameScene.receiveDiceRoll(diceValue);
+        }
+    });
+
+    socket.on("pieceMoved", ({ playerId, pieceIndex }) => {
+        if (window.gameScene) window.gameScene.receivePieceMove(playerId, pieceIndex);
+    });
+
+    function startPhaserGame() {
+        new Phaser.Game({
+            type: Phaser.AUTO,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                parent: 'phaser-container',
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1200, height: 1200
+            },
+            scene: [LudoGame],
+            backgroundColor: "#111"
+        });
+    }
+</script>
+</body>
+</html>

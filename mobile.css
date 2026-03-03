@@ -1,0 +1,79 @@
+body {
+    margin: 0;
+    background: #0a0a0a;
+    color: white;
+    font-family: sans-serif;
+    overflow: hidden;
+    height: 100vh;
+}
+
+#setup-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.setup-card {
+    background: rgba(255,255,255,0.05);
+    padding: 30px;
+    border-radius: 20px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.mica-input {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 15px;
+    color: white;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 15px;
+    background: #4f46e5;
+    border: none;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+/* GAME LAYOUT */
+#game-ui {
+    display: flex;
+    flex-direction: column;
+    height: 100svh;
+}
+
+#phaser-container {
+    flex: 6; /* 60% height */
+    width: 100vw;
+}
+
+.mobile-controls {
+    flex: 4; /* 40% height */
+    background: #151515;
+    border-top: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 20px;
+    border-radius: 25px 25px 0 0;
+}
+
+#turnDisplay { margin: 0; font-size: 20px; color: #4fc3f7; }
+#diceDisplay { font-size: 32px; font-weight: bold; }
+
+/* Notification */
+#notification-container { position: fixed; top: 10px; width: 100%; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.mica-notif { background: #333; padding: 10px 20px; border-radius: 20px; opacity: 0; transform: translateY(-20px); transition: 0.3s; margin-bottom: 5px; }
+.mica-notif.show { opacity: 1; transform: translateY(0); }

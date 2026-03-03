@@ -14,6 +14,10 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
+app.get("/mobile.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "mobile.html"));
+});
+
 // Store rooms and players
 const rooms = {};
 

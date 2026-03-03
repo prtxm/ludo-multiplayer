@@ -729,22 +729,40 @@ class LudoGame extends Phaser.Scene {
     updateTurnUI() {
         const playerColor = this.colors[this.currentPlayerIndex];
         const turnText = document.getElementById("turnDisplay");
-        const rollBtn = document.getElementById("rollBtn");
+        // Check for both possible button IDs since we might have renamed it
+        const rollBtn = document.getElementById("rollButton") || document.getElementById("rollBtn");
+
+        if (!turnText || !rollBtn) return; // Safety: exit if elements aren't found yet
 
         // Show whose turn it is
         turnText.innerText = playerColor.name + "'S TURN";
 
-        // Hide or show the roll button based on multiplayer ID
+        // Logic: Only the person whose turn it is gets to see/click the button
         if (window.myPlayerId === this.currentPlayerIndex) {
-            rollBtn.style.display = "block"; // Show button
+            rollBtn.style.display = "block"; // Show button for the active player
             turnText.innerText += " (YOU)";
+            
+            // Re-enable button if it was disabled during movement
+            if (!this.isMoving) rollBtn.disabled = false; 
         } else {
-            rollBtn.style.display = "none";  // Hide button
+            rollBtn.style.display = "none";  // Hide button for everyone else
         }
         
-        // Update Button Color Dynamically to match the player!
-        rollBtn.style.background = `linear-gradient(135deg, ${this.formatHex(playerColor.value)} 0%, #222 150%)`;
-        rollBtn.style.boxShadow = `0 10px 20px ${this.formatHex(playerColor.value)}44`;
+        // --- UI POLISH: Windows 11 Dynamic Colors ---
+        const hexColor = this.formatHex(playerColor.value);
+        
+        // Update Button Color Dynamically
+        rollBtn.style.background = `linear-gradient(135deg, ${hexColor} 0%, #222 150%)`;
+        rollBtn.style.boxShadow = `0 10px 20px ${hexColor}44`;
+        
+        // Update Turn Text Glow
+        turnText.style.color = hexColor;
+        turnText.style.textShadow = `0 0 10px ${hexColor}66`;
+    }
+
+    // Helper function to convert Phaser hex to CSS hex
+    formatHex(val) {
+        return "#" + val.toString(16).padStart(6, '0');
     }
 
     updateScoreboard() {

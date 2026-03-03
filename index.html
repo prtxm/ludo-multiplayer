@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.href = "mobile.html";
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>6 Player Ludo - Dark Mica Edition</title>
@@ -50,7 +55,6 @@
     </div>
 
     <div id="game-container"></div>
-    
 </div>
 
 <script src="game.js"></script>
