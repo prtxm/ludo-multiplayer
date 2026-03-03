@@ -9,7 +9,7 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-
+<div id="notification-container"></div>
 <div id="setup-screen">
     <div class="setup-card">
         <h1>MULTIPLAYER LUDO</h1>
@@ -50,6 +50,12 @@
     </div>
 
     <div id="game-container"></div>
+
+    <div class="mobile-bottom-ui">
+        <h2 id="turnDisplay">Player Turn</h2>
+        <button id="rollButton" class="action-btn">ROLL DICE</button>
+        <div id="diceDisplay">🎲 --</div>
+    </div>
 </div>
 
 <script src="game.js"></script>
@@ -66,7 +72,7 @@
         const code = document.getElementById("roomCode").value;
         
         if (!name || !code) {
-            alert("Please enter both a Name and a Room Code!");
+            showNotification("Please enter both a Name and a Room Code!");
             return;
         }
         
@@ -83,7 +89,7 @@
 
     // Listen for the server telling us the room was destroyed
     socket.on("roomClosed", () => {
-        alert("The host disconnected! The room has been closed.");
+        showNotification("The host disconnected! The room has been closed.");
         window.location.reload(); // Instantly refresh the page to reset the game
     });
 
@@ -105,7 +111,7 @@
     });
 
     socket.on("roomFull", () => {
-        alert("This room is full! Max 6 players.");
+        showNotification("This room is full! Max 6 players.");
     });
 
     // Host clicks Start Game
@@ -154,6 +160,24 @@
             parent: "game-container",
             scene: LudoGame
         });
+    }
+
+    function showNotification(message) {
+        const container = document.getElementById('notification-container');
+        const notif = document.createElement('div');
+        notif.className = 'mica-notification';
+        notif.innerText = message;
+        
+        container.appendChild(notif);
+
+        // Slight delay to trigger the CSS slide-in animation
+        setTimeout(() => notif.classList.add('show'), 10);
+
+        // Remove the notification after 3.5 seconds
+        setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => notif.remove(), 300); 
+        }, 3500);
     }
 </script>
 </body>

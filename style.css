@@ -113,6 +113,38 @@ body {
 .tp-btn { background: linear-gradient(180deg, #0078d4 0%, #005a9e 100%); }
 .win-btn { background: linear-gradient(180deg, #e81123 0%, #c8102e 100%); }
 
+/* --- IN-GAME NOTIFICATIONS --- */
+#notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Allows clicking through the empty space */
+}
+
+.mica-notification {
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    font-weight: 500;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateX(50px);
+    transition: all 0.3s ease;
+}
+
+.mica-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
 #game-container {
     border-radius: 20px;
     overflow: hidden;
@@ -120,3 +152,42 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 canvas { filter: drop-shadow(0 0 0 transparent) !important; }
+
+/* --- MOBILE LAYOUT FIX --- */
+@media (max-width: 768px) {
+    /* Keep the Ludo board pushed to the top half */
+    canvas {
+        max-height: 60vh !important; 
+        object-fit: contain;
+        margin-top: 10px !important;
+    }
+    
+    /* Lock the controls to the empty bottom space */
+    .mobile-bottom-ui {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 38vh !important; /* Takes up the bottom empty space */
+        background: rgba(15, 15, 15, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border-top: 2px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        z-index: 1000;
+        padding: 20px;
+        box-sizing: border-box;
+        border-radius: 20px 20px 0 0; /* Rounded top corners */
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Make the roll button slightly bigger for thumbs */
+    .mobile-bottom-ui .action-btn {
+        width: 80%;
+        padding: 15px;
+        font-size: 18px;
+    }
+}
