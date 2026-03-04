@@ -14,14 +14,15 @@
 
 <div id="setup-screen">
     <div class="setup-card mica-effect">
-        <h1>LUDO MOBILE</h1>
-        <div class="input-grid">
-            <input type="text" id="playerName" placeholder="Your Name" class="mica-input">
-            <input type="text" id="roomCode" placeholder="Room Code" class="mica-input">
+        <h1>LUDO PRO</h1> <div class="input-grid">
+            <input type="text" id="playerName" placeholder="YOUR NAME" class="mica-input" autocomplete="off">
+            <input type="text" id="roomCode" placeholder="ROOM CODE" class="mica-input" autocomplete="off">
         </div>
         <button class="action-btn join-btn" onclick="joinMultiplayerRoom()">JOIN / CREATE ROOM</button>
+        
         <div id="lobby-status"></div>
         <div id="player-list"></div>
+        
         <button id="start-btn" class="action-btn start-btn" style="display:none;" onclick="startMultiplayerGame()">START GAME</button>
     </div>
 </div>
