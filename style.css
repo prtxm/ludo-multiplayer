@@ -87,9 +87,13 @@ body {
 #turnDisplay { font-size: 18px; font-weight: 700; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
 #diceDisplay {
-    font-size: 52px; height: 90px; border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex; align-items: center; justify-content: center;
+    height: 90px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #rollBtn {
@@ -152,3 +156,23 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 canvas { filter: drop-shadow(0 0 0 transparent) !important; }
+
+/* Dice Spin Animation */
+@keyframes spinDice {
+    0%   { transform: rotate(0deg) scale(1); }
+    25%  { transform: rotate(120deg) scale(1.2); }
+    50%  { transform: rotate(240deg) scale(1.1); }
+    75%  { transform: rotate(300deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+#diceIcon {
+    display: inline-block;
+    font-size: 32px;
+    margin-right: 10px;
+    transform-origin: center;
+}
+
+.diceRolling {
+    animation: spinDice 0.8s ease-in-out;
+}

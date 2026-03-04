@@ -1,4 +1,4 @@
-class LudoGame extends Phaser.Scene {
+class  LudoGame extends Phaser.Scene {
 
     constructor() {
         super("LudoGame");
@@ -10,6 +10,7 @@ class LudoGame extends Phaser.Scene {
         this.load.audio('snd_kill', 'assets/kill.mp3');
         this.load.audio('snd_star', 'assets/star.mp3');
         this.load.audio('snd_win', 'assets/win.mp3');
+        this.load.audio('snd_dice', 'assets/dice-roll.mp3');
     }
 
     create() {
@@ -21,6 +22,7 @@ class LudoGame extends Phaser.Scene {
         this.killSound = this.sound.add('snd_kill');
         this.starSound = this.sound.add('snd_star');
         this.winSound = this.sound.add('snd_win');
+        this.diceSound = this.sound.add('snd_dice');
         // 👆 ------------------------------------------- 👆
 
         // --- WIN11 MICA LAYER ---
@@ -76,7 +78,30 @@ class LudoGame extends Phaser.Scene {
         this.updateTurnUI();
         this.finishedRanks = []; // Tracks who won 1st, 2nd, etc.
         this.updateScoreboard(); // Initialize UI
+
+        // --- DEVELOPER TESTING CONTROLS ---
+        this.input.keyboard.on('keydown-W', () => {
+            console.log("DEV: Teleporting current player's piece to the Win Entry!");
+            let player = this.players[this.currentPlayerIndex];
+            let piece = player.pieces.find(p => !p.isFinished);
+            if (piece) {
+                piece.inMiddle = true;
+                piece.middleIndex = 5; // One step away from winning
+                this.arrangePieces();
+            }
+        });
+
+        this.input.keyboard.on('keydown-ONE', () => {
+            console.log("DEV: Forcing Dice to 1");
+            this.processDiceRoll(1);
+        });
+
+        this.input.keyboard.on('keydown-SIX', () => {
+            console.log("DEV: Forcing Dice to 6");
+            this.processDiceRoll(6);
+        });
     }
+    
 
     // -------------------- BOARD --------------------
 
@@ -361,54 +386,102 @@ class LudoGame extends Phaser.Scene {
     }
 
     // Handles the actual dice logic for both the roller and the receivers
-    processDiceRoll(val) {
+    // Handles the actual dice logic with a rolling animation
+    async processDiceRoll(val) {
+
         this.diceValue = val;
-        document.getElementById("diceDisplay").innerText = "🎲 " + this.diceValue;
+
+        const diceNumber = document.getElementById("diceNumber");
+        const diceIcon = document.getElementById("diceIcon");
+        const rollBtn = document.getElementById("rollBtn");
+
+        if (!diceNumber || !diceIcon) return;
+
+        // Disable UI
+        if (rollBtn) rollBtn.disabled = true;
+        this.isMoving = true;
+
+        // 🔊 Play Dice Sound
+        if (this.diceSound) {
+            this.diceSound.stop();
+            this.diceSound.play();
+        }
+
+        // 🎲 Animate ONLY icon
+        diceIcon.classList.add("diceRolling");
+
+        // Shuffle numbers effect
+        for (let i = 0; i < 10; i++) {
+            let randomValue = Phaser.Math.Between(1, 6);
+            diceNumber.textContent = randomValue;
+            await new Promise(resolve => this.time.delayedCall(70, resolve));
+        }
+
+        // Final number
+        diceNumber.textContent = val;
+
+        // Wait for animation to finish
+        await new Promise(resolve => setTimeout(resolve, 600));
+        diceIcon.classList.remove("diceRolling");
+
+        this.isMoving = false;
 
         let player = this.players[this.currentPlayerIndex];
-        
+
         let canMove = player.pieces.some(piece => {
-            if (piece.pathIndex === -1) return this.diceValue === 6;
-            if (piece.inMiddle) return (piece.middleIndex + this.diceValue < this.middleLanes[player.id].length);
+
+            if (piece.isFinished) return false;
+
+            if (piece.pathIndex === -1) {
+                return this.diceValue === 6;
+            }
+
+            if (piece.inMiddle) {
+                const WIN_INDEX = 6;
+                const required = WIN_INDEX - piece.middleIndex;
+                return this.diceValue <= required;
+            }
+
+            const nextIndex = piece.pathIndex + this.diceValue;
+
+            if (nextIndex >= this.mainPath.length) {
+                const stepsIntoMiddle = nextIndex - this.mainPath.length;
+                return stepsIntoMiddle <= 6;
+            }
+
             return true;
         });
 
-        // Auto-skip turn if no moves are possible
         if (!canMove) {
             this.time.delayedCall(1000, () => {
                 this.diceValue = 0;
-                document.getElementById("diceDisplay").innerText = "🎲 -";
+                diceNumber.textContent = "-";
                 this.nextTurn();
             });
+        } else {
+            if (rollBtn && window.myPlayerId === this.currentPlayerIndex) {
+                rollBtn.disabled = false;
+            }
+        }
+    } 
+    
+    resetForNextRoll() {
+        this.diceValue = 0;
+        this.isMoving = false;
+
+        const rollBtn = document.getElementById("rollBtn");
+        const diceNumber = document.getElementById("diceNumber");
+
+        if (diceNumber) diceNumber.textContent = "-";
+
+        if (rollBtn && window.myPlayerId === this.currentPlayerIndex) {
+            rollBtn.disabled = false;
         }
     }
 
     // Called when the server tells us another player rolled
     receiveDiceRoll(val) {
         this.processDiceRoll(val);
-    }
-
-    // Handles the actual dice logic for both the roller and the receivers
-    processDiceRoll(val) {
-        this.diceValue = val;
-        document.getElementById("diceDisplay").innerText = "🎲 " + this.diceValue;
-
-        let player = this.players[this.currentPlayerIndex];
-        
-        let canMove = player.pieces.some(piece => {
-            if (piece.pathIndex === -1) return this.diceValue === 6;
-            if (piece.inMiddle) return (piece.middleIndex + this.diceValue < this.middleLanes[player.id].length);
-            return true;
-        });
-
-        // Auto-skip turn if no moves are possible
-        if (!canMove) {
-            this.time.delayedCall(1000, () => {
-                this.diceValue = 0;
-                document.getElementById("diceDisplay").innerText = "🎲 -";
-                this.nextTurn();
-            });
-        }
     }
 
     // Called when the server tells us another player rolled
@@ -445,7 +518,13 @@ class LudoGame extends Phaser.Scene {
         // --- 2. IS THE MOVE PHYSICALLY POSSIBLE? ---
         let rolledSix = (this.diceValue === 6);
         if (piece.pathIndex === -1 && !rolledSix) return; // Can't leave base without a 6
-        if (piece.inMiddle && (piece.middleIndex + this.diceValue >= this.middleLanes[player.id].length)) return; // Can't overshoot win zone
+        // ✅ THIS IS THE FIXED LINE ✅
+        if (piece.inMiddle) {
+            const WIN_INDEX = 6;
+            let required = WIN_INDEX - piece.middleIndex;
+
+            if (this.diceValue > required) return;  // block overshoot
+        }
 
         // --- 3. MULTIPLAYER BROADCAST (Only send if the move is actually valid!) ---
         if (!isRemote) {
@@ -477,7 +556,7 @@ class LudoGame extends Phaser.Scene {
         if (piece.pathIndex === -1) {
             if (steps !== 6) return; 
             this.diceValue = 0;
-            document.getElementById("diceDisplay").innerText = "🎲 -";
+            document.getElementById("diceNumber").textContent = "-";
             piece.pathIndex = this.startIndices[player.id];
             piece.tilesMoved = 0; 
             this.starSound.play();
@@ -490,12 +569,13 @@ class LudoGame extends Phaser.Scene {
         }
 
         if (piece.inMiddle) {
-            let remaining = 6 - piece.middleIndex;
-            if (steps > remaining) return; 
-        }
+            const WIN_INDEX = 6;
+            let required = WIN_INDEX - piece.middleIndex;
 
+            if (this.diceValue > required) return;  // block overshoot
+        }
         this.diceValue = 0;
-        document.getElementById("diceDisplay").innerText = "🎲 -";
+        document.getElementById("diceNumber").textContent = "-";
 
         while (steps > 0) {
             if (!piece.inMiddle) {
@@ -580,13 +660,17 @@ class LudoGame extends Phaser.Scene {
         }
         this.arrangePieces();
 
-        // 🔥 Updated Turn Logic: Extra turn if 6, Capture, OR reaching Win Zone
+        // 🔥 Updated Turn Logic
         if (!rolledSix && !wasCapture && !reachedWinZone) {
             this.nextTurn();
         } else {
             console.log("Extra Turn Granted!");
-            this.updateScoreboard();
+
+            // IMPORTANT: properly reset dice state
+            this.resetForNextRoll();
         }
+
+        this.updateScoreboard();
     }
 
     // Called when the server tells us another player moved a piece

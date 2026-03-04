@@ -8,7 +8,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>6 Player Ludo - Dark Mica Edition</title>
+    <title>6 Player Ludo - by Pritam Sanyal</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -44,7 +44,10 @@
         <div id="turnDisplay">RED'S TURN</div>
         
         <div class="label">Dice Result</div>
-        <div id="diceDisplay">🎲 -</div>
+        <div id="diceDisplay">
+            <span id="diceIcon">🎲</span>
+            <span id="diceNumber">-</span>
+        </div>        
         <button id="rollBtn" onclick="gameScene.rollFromUI()">ROLL DICE</button>
 
         <hr class="mica-divider">
@@ -185,5 +188,7 @@
         }, 3500);
     }
 </script>
+<!-- Dice Roll Sound -->
+<audio id="diceSound" src="assets/dice-roll.mp3" preload="auto"></audio>
 </body>
 </html>
