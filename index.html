@@ -69,6 +69,12 @@
     function joinMultiplayerRoom() {
         const name = document.getElementById("playerName").value;
         const code = document.getElementById("roomCode").value;
+        // 1. Force the mobile keyboard to hide and remove focus from inputs
+        document.getElementById('playerName').blur();
+        document.getElementById('roomCode').blur();
+        
+        // 2. Force the browser to snap back to the top-left corner
+        window.scrollTo(0, 0);
         
         if (!name || !code) {
             showNotification("Please enter both a Name and a Room Code!");

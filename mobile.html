@@ -46,6 +46,10 @@
 
     // --- RE-USE YOUR JOINING LOGIC ---
     function joinMultiplayerRoom() {
+        // 1. Force the mobile keyboard to hide and remove focus from inputs
+        document.getElementById('playerName').blur();
+        document.getElementById('roomCode').blur();
+        window.scrollTo(0, 0);
         const name = document.getElementById("playerName").value.trim();
         const code = document.getElementById("roomCode").value.trim();
         if(!name || !code) return;
