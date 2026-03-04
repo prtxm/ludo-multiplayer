@@ -97,18 +97,6 @@
             scene: [LudoGame]
         });
     }
-
-    // --- TOUCH INTERACTION FIX ---
-    // Forces the button to click even if the game canvas is on top
-    document.addEventListener('touchstart', (e) => {
-        const btn = document.getElementById('rollButton');
-        if (e.target === btn || btn?.contains(e.target)) {
-            if (!btn.disabled && btn.style.display !== 'none') {
-                e.preventDefault();
-                btn.click();
-            }
-        }
-    }, { passive: false });
 </script>
 </body>
 </html>

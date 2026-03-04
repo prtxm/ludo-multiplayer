@@ -272,16 +272,19 @@ class LudoGame extends Phaser.Scene {
             };
             
             // ONLY spawn gutis if the player actually joined
+            // ONLY spawn gutis if the player actually joined
             if (player.isActive) {
                 let home = this.homeCircles[i];
                 const spread = home.radius * 0.45;
+                const radius = 11; // Defined here for easy reuse
 
                 [45, 135, 225, 315].forEach(deg => {
                     let rad = Phaser.Math.DegToRad(deg);
+                    
                     let piece = this.add.circle(
                         home.x + Math.cos(rad) * spread,
                         home.y + Math.sin(rad) * spread,
-                        11, 
+                        radius, 
                         this.colors[i].value
                     )
                     .setStrokeStyle(2, 0x000000, 1) 
@@ -297,7 +300,15 @@ class LudoGame extends Phaser.Scene {
                     piece.middleIndex = -1;
                     piece.isFinished = false;
 
-                    piece.setInteractive();
+                    const hitAreaPadding = 30; // Expanding touch target
+                    
+                    piece.setInteractive({
+                        // Using the exact radius (11) for the local center X, center Y, and total size
+                        hitArea: new Phaser.Geom.Circle(radius, radius, radius + hitAreaPadding),
+                        hitAreaCallback: Phaser.Geom.Circle.Contains,
+                        useHandCursor: true
+                    });
+                    
                     piece.on("pointerdown", () => this.tryMove(piece));
                     player.pieces.push(piece);
                 });
