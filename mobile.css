@@ -1,4 +1,5 @@
 body {
+    touch-action: pan-x pan-y;
     margin: 0;
     padding: 0;
     background: #0a0a0a;
@@ -73,6 +74,10 @@ body {
     box-sizing: border-box;
     transition: all 0.3s ease;
     text-align: center; /* Centers the placeholder text nicely */
+}
+
+.mica-input, input[type="text"] {
+    font-size: 16px !important; /* The !important tag is crucial here */
 }
 
 .mica-input::placeholder {
