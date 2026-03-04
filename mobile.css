@@ -9,57 +9,70 @@ body {
     overflow: hidden;
 }
 
-/* GAME LAYOUT */
+/* GAME LAYOUT - The Bulletproof Overlay Method */
 #game-ui {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+    display: block; 
+    /* Use 100dvh (Dynamic Viewport Height) so it respects the mobile address bar */
+    height: 100dvh; 
     width: 100vw;
+    position: relative;
     overflow: hidden;
 }
 
-/* 1. Phaser Board Container */
+/* 1. Phaser Board takes the whole screen */
 #phaser-container {
-    flex: 1; /* Takes all available space above the footer */
-    width: 100vw;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1;
-    position: relative; /* Keeps it contained */
 }
 
 canvas {
     max-width: 100% !important;
     max-height: 100% !important;
-    object-fit: contain; /* Ensures the board doesn't stretch */
+    object-fit: contain;
 }
 
-
-/* 2. Compact Bottom Footer (Dice Controls) */
+/* 2. Compact Bottom Footer (Glued to the bottom) */
 .mobile-footer {
-    height: 80px; /* Force a compact fixed height */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 85px; /* Fixed height so it never gets too big */
     background: rgba(20, 20, 20, 0.95);
     backdrop-filter: blur(15px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    
     display: flex;
     align-items: center;
-    justify-content: space-around; /* Evenly spaces the items */
+    justify-content: space-around;
+    
+    /* box-sizing ensures padding doesn't accidentally make it wider than 100vw */
+    box-sizing: border-box; 
     padding: 10px 15px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* Accounts for iPhone home bar */
-    z-index: 9999; /* Forces the footer ABOVE the game canvas */
-    position: relative; 
-    box-shadow: 0px -5px 15px rgba(0,0,0,0.5);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* iPhone home bar fix */
+    
+    z-index: 9999; /* Rock solid on top of the canvas */
+    pointer-events: auto; /* Forces the browser to register clicks here */
+    box-shadow: 0px -5px 25px rgba(0,0,0,0.6);
 }
 
+/* The Wrapper: Keeps things horizontal and centered */
 .footer-controls {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 15px;
+    justify-content: space-between; /* Keeps Name/Dice left and Button right */
+    height: 100%;
+    gap: 10px;
 }
 
-/* Shrink the text/dice so it fits the compact footer */
+/* Ensure the text fits nicely */
 #turnDisplay {
     font-size: 14px;
     margin: 0;

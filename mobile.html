@@ -26,16 +26,15 @@
     </div>
 </div>
 
-<div id="game-ui" style="display: none;">
-    <div id="phaser-container"></div>
-    
-    <div class="mobile-footer">
-        <div id="turnDisplay">Waiting...</div>
-        <div class="footer-controls">
-            <div id="diceDisplay">🎲 --</div>
-            <button id="rollButton" class="action-btn roll-btn">ROLL DICE</button>
-        </div>
-    </div>
+<div id="game-ui">
+   <div id="phaser-container"></div>
+   <footer class="mobile-footer">
+      <div class="footer-controls">
+        <div id="turnDisplay">Player Turn</div>
+        <div id="diceDisplay">?</div>
+        <button id="rollButton" class="roll-btn" onclick="rollDice()">ROLL</button>
+      </div>
+   </footer>
 </div>
 
 <script src="game.js"></script>
