@@ -5,9 +5,24 @@ class LudoGame extends Phaser.Scene {
         
     }
     
+    preload() {
+        this.load.audio('snd_move', 'assets/move.mp3');
+        this.load.audio('snd_kill', 'assets/kill.mp3');
+        this.load.audio('snd_star', 'assets/star.mp3');
+        this.load.audio('snd_win', 'assets/win.mp3');
+    }
+
     create() {
 
         window.gameScene = this;
+
+        // 👇 --- DECLARE YOUR SOUND VARIABLES HERE --- 👇
+        this.moveSound = this.sound.add('snd_move');
+        this.killSound = this.sound.add('snd_kill');
+        this.starSound = this.sound.add('snd_star');
+        this.winSound = this.sound.add('snd_win');
+        // 👆 ------------------------------------------- 👆
+
         // --- WIN11 MICA LAYER ---
         // Creates a frosted pane behind the tiles
         this.add.rectangle(600, 600, 850, 850, 0x1a1a1a, 0.6)
@@ -401,6 +416,19 @@ class LudoGame extends Phaser.Scene {
         this.processDiceRoll(val);
     }
 
+    playSoundSafe(audioKey) {
+        try {
+            // Only play if the browser loaded it successfully and audio is unlocked
+            if (this.sound.get(audioKey)) {
+                this.sound.play(audioKey);
+            } else {
+                console.warn("Could not find sound: " + audioKey);
+            }
+        } catch (error) {
+            console.error("Audio playback error:", error);
+        }
+    }
+
     // -------------------- MOVEMENT --------------------
 
     // --- UPDATED MOVEMENT LOGIC ---
@@ -452,6 +480,7 @@ class LudoGame extends Phaser.Scene {
             document.getElementById("diceDisplay").innerText = "🎲 -";
             piece.pathIndex = this.startIndices[player.id];
             piece.tilesMoved = 0; 
+            this.starSound.play();
             
             await this.animateTo(piece, this.globalOuterPath[piece.pathIndex]);
             this.arrangePieces(); 
@@ -484,6 +513,7 @@ class LudoGame extends Phaser.Scene {
             } else {
                 piece.middleIndex++;
                 if (piece.middleIndex === 6) {
+                    this.winSound.play();
                     await this.animateTo(piece, this.winPoints[player.id]);
                     piece.isFinished = true;
                     // STANDARD STACKING LOGIC: Shrink the gutis and put them in a mini-grid
@@ -542,6 +572,12 @@ class LudoGame extends Phaser.Scene {
         }
 
         let wasCapture = await this.handleCapture(piece);
+        if (!wasCapture && !reachedWinZone && !piece.inMiddle && piece.pathIndex !== -1) {
+            let finalTile = this.globalOuterPath[piece.pathIndex];
+            if (finalTile && finalTile.isStar) {
+                this.starSound.play();
+            }
+        }
         this.arrangePieces();
 
         // 🔥 Updated Turn Logic: Extra turn if 6, Capture, OR reaching Win Zone
@@ -588,6 +624,9 @@ class LudoGame extends Phaser.Scene {
             );
 
             for (let victim of victims) {
+                if (!capturedAny) {
+                    this.killSound.play();
+                }
                 capturedAny = true;
                 
                 // Reset the victim's progress instantly so arrangePieces ignores it
@@ -618,6 +657,7 @@ class LudoGame extends Phaser.Scene {
 
     animateTo(piece, tile) {
         this.isMoving = true;
+        this.moveSound.play();
 
         // Calculate angle to the tile
         let angleToTile = Math.atan2(tile.y - piece.y, tile.x - piece.x);
