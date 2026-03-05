@@ -226,3 +226,61 @@ canvas {
 .setup-card { padding: 30px; margin: 20px; background: #1a1a1a; border-radius: 20px; text-align: center; }
 .mica-input { width: 90%; padding: 12px; margin-bottom: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 8px; }
 .p-item { padding: 8px; background: rgba(255,255,255,0.05); margin-top: 5px; border-radius: 5px; }
+
+/* =========================================
+   MOBILE MICA PANELS & BUTTONS
+   ========================================= */
+.mica-panel {
+    background: linear-gradient(135deg, rgba(32, 32, 32, 0.85) 0%, rgba(20, 20, 20, 0.95) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    z-index: 5000; /* Above board, below footer */
+    box-sizing: border-box;
+}
+
+.label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 700;
+}
+
+.action-btn-small {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: inherit;
+    color: white;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+    transition: transform 0.1s;
+}
+
+.action-btn-small:active {
+    transform: scale(0.95);
+    border-bottom: 0px solid rgba(0, 0, 0, 0.4);
+}
+
+.mica-input-small {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 6px;
+    color: #4fc3f7;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.mica-input-small:focus {
+    outline: none;
+    border-color: #4fc3f7;
+}

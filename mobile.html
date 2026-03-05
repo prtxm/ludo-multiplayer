@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="mobile.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 
@@ -28,14 +29,34 @@
 </div>
 
 <div id="game-ui">
-   <div id="phaser-container"></div>
-   <footer class="mobile-footer">
-      <div class="footer-controls">
-        <div id="turnDisplay">Player Turn</div>
-        <div id="diceDisplay">?</div>
-        <button id="rollButton" class="roll-btn" onclick="rollDice()">ROLL</button>
-      </div>
-   </footer>
+    <div id="phaser-container"></div>
+    <div id="media-panel" class="mica-panel" style="position: absolute; top: 15px; left: 10px; width: 160px; display: none;">
+        <div class="label drag-handle">Music (Host)</div>
+        <input type="text" id="ytVideoId" class="mica-input-small" placeholder="Paste YT Link" style="font-size: 10px; padding: 6px; margin-bottom: 5px;">
+        <button class="action-btn-small" onclick="broadcastMedia()" style="width: 100%;">Play for Everyone</button>
+        <div class="label drag-handle" style="margin-top: 8px;">Volume</div>
+        <input type="range" id="volSlider" min="0" max="100" value="50" onchange="changeVolume()" style="width: 100%; height: 10px;">
+        <div id="yt-player-container" style="display: none;"></div>
+    </div>
+
+    <div id="chat-panel" class="mica-panel" style="position: absolute; bottom: 100px; left: 10px; width: 160px;">
+        <div class="label drag-handle">Quick Chat</div>
+        <div id="chat-messages" style="height: 70px; overflow-y: auto; font-size: 11px; margin-bottom: 6px; color: #ccc;"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <button class="action-btn-small" onclick="sendChat('Hello!')">Hello!</button>
+            <button class="action-btn-small" onclick="sendChat('Hurry!')">Hurry!</button>
+            <button class="action-btn-small" onclick="sendChat('Oops!')">Oops!</button>
+            <button class="action-btn-small" onclick="sendChat('GG!')">GG!</button>
+        </div>
+    </div>
+
+    <footer class="mobile-footer">
+        <div class="footer-controls">
+            <div id="turnDisplay">Player Turn</div>
+            <div id="diceDisplay">?</div>
+            <button id="rollButton" class="roll-btn" onclick="rollDice()">ROLL</button>
+        </div>
+    </footer>
 </div>
 
 <script src="game.js"></script>
@@ -101,6 +122,124 @@
             scene: [LudoGame]
         });
     }
+
+    // --- CHAT LOGIC ---
+    function sendChat(msg) {
+        socket.emit("sendChat", {
+            roomCode: window.myRoomCode,
+            playerName: document.getElementById("playerName").value,
+            text: msg
+        });
+    }
+
+    socket.on("receiveChat", (data) => {
+        const chatBox = document.getElementById("chat-messages");
+        chatBox.innerHTML += `<div><strong style="color: #4fc3f7;">${data.playerName}:</strong> ${data.text}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // --- YOUTUBE LOGIC ---
+    let ytPlayer;
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('yt-player-container', {
+            height: '0', width: '0', videoId: '', playerVars: { 'autoplay': 1, 'controls': 0 }
+        });
+    }
+
+    function extractVideoID(url) {
+        let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        let match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : url; 
+    }
+
+    function broadcastMedia() {
+        const rawInput = document.getElementById("ytVideoId").value;
+        const vidId = extractVideoID(rawInput);
+        socket.emit("playMedia", { roomCode: window.myRoomCode, videoId: vidId });
+    }
+
+    socket.on("syncMedia", (data) => {
+        if (ytPlayer && ytPlayer.loadVideoById) {
+            ytPlayer.loadVideoById(data.videoId);
+            ytPlayer.setVolume(document.getElementById("volSlider").value);
+        }
+    });
+
+    function changeVolume() {
+        if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(document.getElementById("volSlider").value);
+    }
+
+    function checkHostUI() {
+        if (window.myPlayerId === 0) {
+            document.getElementById("media-panel").style.display = "block";
+        }
+    }
+
+    // Call checkHostUI when the game starts
+    socket.on("gameStarted", (playersData) => {
+        window.activePlayers = playersData;
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'block'; // Make sure this is 'block'
+        checkHostUI();
+        startPhaserGame();
+    });
+
+    // --- DRAGGABLE UI LOGIC ---
+    function makeDraggable(element) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        let dragHandles = element.querySelectorAll('.drag-handle');
+        let handle = dragHandles.length > 0 ? dragHandles[0] : element;
+        
+        handle.style.cursor = 'grab';
+        
+        // Use touch events for mobile!
+        handle.ontouchstart = dragStart;
+        handle.onmousedown = dragStart;
+
+        function dragStart(e) {
+            if (['INPUT', 'BUTTON', 'TEXTAREA'].includes(e.target.tagName)) return;
+            document.querySelectorAll('.mica-panel').forEach(p => p.style.zIndex = '5000');
+            element.style.zIndex = '5001';
+            
+            let event = e.type === 'touchstart' ? e.touches[0] : e;
+            pos3 = event.clientX;
+            pos4 = event.clientY;
+            
+            document.ontouchend = closeDragElement;
+            document.onmouseup = closeDragElement;
+            document.ontouchmove = elementDrag;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            let event = e.type === 'touchmove' ? e.touches[0] : e;
+            pos1 = pos3 - event.clientX;
+            pos2 = pos4 - event.clientY;
+            pos3 = event.clientX;
+            pos4 = event.clientY;
+            
+            element.style.bottom = 'auto';
+            element.style.right = 'auto';
+            element.style.top = (element.offsetTop - pos2) + "px";
+            element.style.left = (element.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.ontouchend = null;
+            document.onmouseup = null;
+            document.ontouchmove = null;
+            document.onmousemove = null;
+        }
+    }
+
+    // Apply draggable to panels
+    window.addEventListener("DOMContentLoaded", () => {
+        ['chat-panel', 'media-panel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) makeDraggable(el);
+        });
+    });
+    
 </script>
 </body>
 </html>
