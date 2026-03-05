@@ -153,14 +153,18 @@
     });
 
     socket.on("joinError", (msg) => {
-        showNotification(msg);
-        setTimeout(() => window.location.reload(), 2000);
+        showNotification(msg + " - Reloading in 5 seconds...");
+        // Timeout to reload the site automatically
+        setTimeout(() => window.location.reload(), 5000);
     });
 
-    socket.on("roomFull", () => showNotification("This room is full! Max 6 players."));
+    socket.on("roomFull", () => {
+        showNotification("Room is full! Try a different code. Reloading...");
+        setTimeout(() => window.location.reload(), 4000);
+    });
     socket.on("hostLeft", () => {
-        showNotification("The host disconnected! The room is closed.");
-        setTimeout(() => window.location.reload(), 2000);
+        showNotification("The host disconnected! Room closed. Reloading...");
+        setTimeout(() => window.location.reload(), 3000);
     });
     socket.on("roomClosed", () => {
         showNotification("The room has been closed.");
@@ -261,17 +265,23 @@
 
 
     // --- UTILS ---
+    // --- UPDATED NOTIFICATION FUNCTION ---
     function showNotification(message) {
         const container = document.getElementById('notification-container');
         const notif = document.createElement('div');
         notif.className = 'mica-notification';
         notif.innerText = message;
-        container.appendChild(notif);
+        
+        // Ensure it's added to the top of the list visually
+        container.insertBefore(notif, container.firstChild);
+        
         setTimeout(() => notif.classList.add('show'), 10);
+        
+        // Auto-remove notification from DOM
         setTimeout(() => {
             notif.classList.remove('show');
             setTimeout(() => notif.remove(), 300); 
-        }, 3500);
+        }, 4500);
     }
 </script>
 <script>
