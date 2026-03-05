@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            window.location.href = "mobile.html";
-        }
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>6 Player Ludo - by Pritam Sanyal</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 <div id="notification-container"></div>
@@ -53,30 +49,51 @@
         <hr class="mica-divider">
         
         <div class="label">Scoreboard</div>
-        <div id="scoreboard">
-            </div>
+        <div id="scoreboard"></div>
+    </div>
+
+    <div id="chat-panel" class="mica-panel" style="position: absolute; bottom: 50px; left: 20px; width: 250px;">
+        <div class="label">Quick Chat</div>
+        <div id="chat-messages" style="height: 100px; overflow-y: auto; font-size: 12px; margin-bottom: 10px; color: #ccc;"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+            <button class="action-btn" onclick="sendChat('Hello!')" style="padding: 5px;">Hello!</button>
+            <button class="action-btn" onclick="sendChat('Hurry up!')" style="padding: 5px;">Hurry up!</button>
+            <button class="action-btn" onclick="sendChat('Oops!')" style="padding: 5px;">Oops!</button>
+            <button class="action-btn" onclick="sendChat('Good Game!')" style="padding: 5px;">Good Game!</button>
+        </div>
+    </div>
+
+    <div id="media-panel" class="mica-panel" style="position: absolute; top: 20px; left: 1585px; width: 250px; display: none;">
+        <div class="label">Music Player (Host Controls)</div>
+        <input type="text" id="ytVideoId" class="mica-input" placeholder="Paste full YouTube Link or ID" style="font-size: 10px; padding: 5px; margin-bottom: 5px;">
+        <button class="action-btn" onclick="broadcastMedia()" style="padding: 5px;">Play for Everyone</button>
+        
+        <div class="label" style="margin-top: 10px;">Volume</div>
+        <input type="range" id="volSlider" min="0" max="100" value="50" onchange="changeVolume()" style="width: 100%;">
+        
+        <div id="yt-player-container" style="display: none;"></div>
     </div>
 
     <div id="game-container"></div>
 </div>
 
 <script src="game.js"></script>
+
 <script>
-    // Initialize Socket Connection
+    // --- INITIALIZE SOCKET FIRST ---
     const socket = io();
     window.socket = socket; 
     window.myPlayerId = 0;
     window.myRoomCode = "";
-    window.playerNames = ["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"]; // Defaults
+    window.playerNames = ["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"];
 
+    // --- LOBBY & CONNECTION LOGIC ---
     function joinMultiplayerRoom() {
         const name = document.getElementById("playerName").value;
         const code = document.getElementById("roomCode").value;
-        // 1. Force the mobile keyboard to hide and remove focus from inputs
+        
         document.getElementById('playerName').blur();
         document.getElementById('roomCode').blur();
-        
-        // 2. Force the browser to snap back to the top-left corner
         window.scrollTo(0, 0);
         
         if (!name || !code) {
@@ -89,70 +106,77 @@
         document.getElementById("lobby-status").innerText = "Connecting to room...";
     }
 
-    // Server confirms we joined
     socket.on("joined", (playerInfo) => {
         window.myPlayerId = playerInfo.id;
         console.log("I am Player ID: " + window.myPlayerId);
     });
 
-    // Listen for the server telling us the room was destroyed
-    socket.on("roomClosed", () => {
-        showNotification("The host disconnected! The room has been closed.");
-        window.location.reload(); // Instantly refresh the page to reset the game
+    socket.on("joinedSuccess", (playerInfo) => {
+        window.myPlayerId = playerInfo.id;
     });
 
-    // Server sends updated list of players in the room
     socket.on("updatePlayers", (players) => {
         let statusText = "PLAYERS IN ROOM " + window.myRoomCode + ":<br><br>";
-        
         players.forEach(p => {
             statusText += "🟢 " + p.name + " (Player " + (p.id + 1) + ")<br>";
-            window.playerNames[p.id] = p.name; // Save their names for Phaser
+            window.playerNames[p.id] = p.name; 
         });
-        
         document.getElementById("lobby-status").innerHTML = statusText;
         
-        // If I am the Host (Player 0) and someone else is here, show the Start button!
         if (window.myPlayerId === 0 && players.length >= 1) {
             document.getElementById("startGameBtn").style.display = "block";
         }
     });
 
-    socket.on("roomFull", () => {
-        showNotification("This room is full! Max 6 players.");
+    socket.on("roomUpdated", (players) => {
+        let statusText = "PLAYERS IN ROOM " + window.myRoomCode + ":<br><br>";
+        players.forEach(p => {
+            statusText += "🟢 " + p.name + " (Player " + (p.id + 1) + ")<br>";
+            window.playerNames[p.id] = p.name; 
+        });
+        document.getElementById("lobby-status").innerHTML = statusText;
+        
+        if (window.myPlayerId === 0 && players.length >= 1) {
+            document.getElementById("startGameBtn").style.display = "block";
+        }
     });
 
-    // Host clicks Start Game
+    socket.on("joinError", (msg) => {
+        showNotification(msg);
+        setTimeout(() => window.location.reload(), 2000);
+    });
+
+    socket.on("roomFull", () => showNotification("This room is full! Max 6 players."));
+    socket.on("hostLeft", () => {
+        showNotification("The host disconnected! The room is closed.");
+        setTimeout(() => window.location.reload(), 2000);
+    });
+    socket.on("roomClosed", () => {
+        showNotification("The room has been closed.");
+        setTimeout(() => window.location.reload(), 2000);
+    });
+
+    // --- GAME SYNC LOGIC ---
     function startMultiplayerGame() {
         socket.emit("startGame", window.myRoomCode);
     }
 
-    // Server tells EVERYONE in the room to start the game at the exact same time
     socket.on("gameStarted", (playersData) => {
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('game-ui').style.display = 'block';
-        
-        // Save joined players globally so game.js can read them
         window.activePlayers = playersData; 
-        
-        startPhaserGame(); // Boot Phaser!
+        checkHostUI(); // Show media player if host
+        startPhaserGame(); 
     });
 
-    // --- NEW: IN-GAME MULTIPLAYER SYNC ---
-
-    // When someone else rolls the dice
-    // When someone else rolls the dice
     socket.on("diceRolled", ({ diceValue, playerId }) => {
         if (window.gameScene) {
-            // 🚨 FORCE SYNC the turn here too!
             window.gameScene.currentPlayerIndex = playerId;
             window.gameScene.updateTurnUI();
-            
             window.gameScene.receiveDiceRoll(diceValue);
         }
     });
 
-    // When someone else moves a piece
     socket.on("pieceMoved", ({ playerId, pieceIndex }) => {
         if (window.gameScene) {
             window.gameScene.receivePieceMove(playerId, pieceIndex);
@@ -162,33 +186,144 @@
     function startPhaserGame() {
         new Phaser.Game({
             type: Phaser.AUTO,
-            width: 1200,
-            height: 1200,
-            transparent: true,
-            parent: "game-container",
-            scene: LudoGame
+            width: 1200, height: 1200, transparent: true,
+            parent: "game-container", scene: LudoGame
         });
     }
 
+    // --- CHAT LOGIC ---
+    function sendChat(msg) {
+        socket.emit("sendChat", {
+            roomCode: window.myRoomCode,
+            playerName: document.getElementById("playerName").value,
+            text: msg
+        });
+    }
+
+    socket.on("receiveChat", (data) => {
+        const chatBox = document.getElementById("chat-messages");
+        chatBox.innerHTML += `<div><strong style="color: #4fc3f7;">${data.playerName}:</strong> ${data.text}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        showNotification(`${data.playerName}: ${data.text}`);
+    });
+
+    // --- YOUTUBE LOGIC ---
+    let ytPlayer;
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('yt-player-container', {
+            height: '0', width: '0', videoId: '', playerVars: { 'autoplay': 1, 'controls': 0 }
+        });
+    }
+
+    // NEW: Function to grab the video ID out of any standard YouTube link
+    function extractVideoID(url) {
+        let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        let match = url.match(regExp);
+        // If it matches a link format, return the 11 character ID. Otherwise assume the user just typed the ID directly.
+        return (match && match[2].length === 11) ? match[2] : url; 
+    }
+
+    function broadcastMedia() {
+        const rawInput = document.getElementById("ytVideoId").value;
+        const vidId = extractVideoID(rawInput); // Extract the ID before sending
+        socket.emit("playMedia", { roomCode: window.myRoomCode, videoId: vidId });
+    }
+
+    socket.on("syncMedia", (data) => {
+        if (ytPlayer && ytPlayer.loadVideoById) {
+            ytPlayer.loadVideoById(data.videoId);
+            ytPlayer.setVolume(document.getElementById("volSlider").value);
+        }
+    });
+
+    function changeVolume() {
+        if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(document.getElementById("volSlider").value);
+    }
+
+    function checkHostUI() {
+        // Only Player 0 (The Host) will ever have this panel set to display: block!
+        if (window.myPlayerId === 0) {
+            document.getElementById("media-panel").style.display = "block";
+        }
+    }
+
+
+
+    // --- UTILS ---
     function showNotification(message) {
         const container = document.getElementById('notification-container');
         const notif = document.createElement('div');
         notif.className = 'mica-notification';
         notif.innerText = message;
-        
         container.appendChild(notif);
-
-        // Slight delay to trigger the CSS slide-in animation
         setTimeout(() => notif.classList.add('show'), 10);
-
-        // Remove the notification after 3.5 seconds
         setTimeout(() => {
             notif.classList.remove('show');
             setTimeout(() => notif.remove(), 300); 
         }, 3500);
     }
 </script>
-<!-- Dice Roll Sound -->
+<script>
+    function makeDraggable(element) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        
+        // Use the panel's top label as the drag handle. If it doesn't have one, use the whole panel.
+        let dragHandle = element.querySelector('.label') || element;
+        
+        dragHandle.style.cursor = 'grab';
+        
+        dragHandle.onmousedown = function(e) {
+            // Do not start dragging if trying to click a button or type in an input
+            if (['INPUT', 'BUTTON', 'TEXTAREA', 'SPAN'].includes(e.target.tagName)) return;
+            
+            e.preventDefault();
+            
+            // Bring the currently dragged panel to the front
+            document.querySelectorAll('.mica-panel, .setup-card').forEach(p => p.style.zIndex = '10');
+            element.style.zIndex = '100';
+            
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+            dragHandle.style.cursor = 'grabbing';
+        };
+
+        function elementDrag(e) {
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            // Clear 'bottom' or 'right' CSS constraints so the panel moves freely
+            element.style.bottom = 'auto';
+            element.style.right = 'auto';
+            
+            element.style.top = (element.offsetTop - pos2) + "px";
+            element.style.left = (element.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            dragHandle.style.cursor = 'grab';
+        }
+    }
+
+    // Apply the drag logic to the panels as soon as the page loads
+    window.addEventListener("DOMContentLoaded", () => {
+        const panels = ['ui-panel', 'chat-panel', 'media-panel'];
+        panels.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) makeDraggable(el);
+        });
+
+        // Make the initial setup lobby card movable too
+        const setupCard = document.querySelector('.setup-card');
+        if (setupCard) makeDraggable(setupCard);
+    });
+</script>
 <audio id="diceSound" src="assets/dice-roll.mp3" preload="auto"></audio>
 </body>
 </html>

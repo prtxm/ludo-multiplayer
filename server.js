@@ -26,34 +26,52 @@ io.on("connection", (socket) => {
 
     // 1. Handle a player joining a room
     socket.on("joinRoom", ({ playerName, roomCode }) => {
-        socket.join(roomCode);
-        
         if (!rooms[roomCode]) {
-            rooms[roomCode] = { players: [] }; // Create room if it doesn't exist
+            rooms[roomCode] = { players: [], hostSocket: socket.id }; 
         }
-        
-        // Assign player ID (0 for Red, 1 for Green, etc.)
-        const playerId = rooms[roomCode].players.length; 
-        if(playerId >= 6) {
-            socket.emit("roomFull");
+
+        // PREVENT DUPLICATE ENTRIES
+        const nameExists = rooms[roomCode].players.some(p => p.name.toLowerCase() === playerName.toLowerCase());
+        if (nameExists) {
+            socket.emit("joinError", "Name already taken in this room!");
             return;
         }
 
-        const playerInfo = { id: playerId, name: playerName, socketId: socket.id };
-        rooms[roomCode].players.push(playerInfo);
+        const playerId = rooms[roomCode].players.length;
+        if (playerId >= 6) {
+            socket.emit("joinError", "Room is full!");
+            return;
+        }
 
-        // Tell this specific player their ID
-        socket.emit("joined", playerInfo);
-        
-        // Tell everyone in the room to update their lobby list
-        io.to(roomCode).emit("updatePlayers", rooms[roomCode].players);
+        const newPlayer = { id: playerId, name: playerName, socketId: socket.id };
+        rooms[roomCode].players.push(newPlayer);
+        socket.join(roomCode);
+
+        // Store user info on the socket for disconnect handling
+        socket.roomCode = roomCode;
+        socket.playerId = playerId;
+
+        io.to(roomCode).emit("roomUpdated", rooms[roomCode].players);
+        socket.emit("joinedSuccess", newPlayer);
     });
 
-    // 2. Handle Host starting the game
+    // 2. Chat Broadcast
+    socket.on("sendChat", (data) => {
+        io.to(data.roomCode).emit("receiveChat", {
+            playerName: data.playerName,
+            text: data.text
+        });
+    });
+
     // 2. Handle Host starting the game
     socket.on("startGame", (roomCode) => {
         // Send the exact array of joined players to everyone
         io.to(roomCode).emit("gameStarted", rooms[roomCode].players);
+    });
+
+    // 3. Media Player Sync (Host Only)
+    socket.on("playMedia", (data) => {
+        io.to(data.roomCode).emit("syncMedia", data);
     });
 
     // --- ADD THESE NEW MULTIPLAYER EVENTS ---
@@ -70,24 +88,22 @@ io.on("connection", (socket) => {
         socket.to(roomCode).emit("pieceMoved", { playerId, pieceIndex });
     });
 
+    // 4. Handle Disconnect (Leaving Logic Fix)
     socket.on("disconnect", () => {
         console.log("Player disconnected: " + socket.id);
-        
-        // Find which room this socket belonged to
-        for (const roomCode in rooms) {
+        const roomCode = socket.roomCode;
+
+        if (roomCode && rooms[roomCode]) {
             const room = rooms[roomCode];
-            const playerIndex = room.players.findIndex(p => p.socketId === socket.id);
             
-            if (playerIndex !== -1) {
-                // A player was found in this room. 
-                // Since ANY player leaving should end the game, we delete the entire room.
-                delete rooms[roomCode];
-                
-                // Tell ALL remaining players that the room is closed
-                io.to(roomCode).emit("roomClosed"); 
-                console.log(`Room ${roomCode} was destroyed because a player disconnected.`);
-                
-                break; // Stop searching once we found and handled the player
+            // If the HOST left (Host is always playerId 0 or the matching hostSocket)
+            if (socket.id === room.hostSocket || socket.playerId === 0) {
+                io.to(roomCode).emit("hostLeft"); // Tell everyone the game is over
+                delete rooms[roomCode]; // Delete entire room
+            } else {
+                // Regular player left -> Remove only them
+                room.players = room.players.filter(p => p.socketId !== socket.id);
+                io.to(roomCode).emit("roomUpdated", room.players);
             }
         }
     });
