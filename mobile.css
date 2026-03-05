@@ -146,10 +146,10 @@ body {
     overflow: hidden;
 }
 
-/* 1. Phaser Board takes the whole screen */
+/* 1. Container leaves exactly 85px for the footer */
 #phaser-container {
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: calc(100dvh - 85px); 
     position: absolute;
     top: 0;
     left: 0;
@@ -159,10 +159,11 @@ body {
     align-items: center;
 }
 
+/* 2. Let Phaser control the canvas size naturally */
 canvas {
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    /* REMOVED the !important overrides that were breaking the scale */
 }
 
 /* 2. Compact Bottom Footer (Glued to the bottom) */

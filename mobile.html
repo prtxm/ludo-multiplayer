@@ -112,17 +112,17 @@
             type: Phaser.AUTO,
             parent: 'phaser-container',
             transparent: true,
-            render: { antialias: true, roundPixels: true },
+            // Cleaned up scaling config
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1200, height: 1200,
-                resolution: window.devicePixelRatio || 1
+                width: 1200, 
+                height: 1200
             },
-            scene: [LudoGame]
+            scene: [LudoGame] // Make sure your game class is referenced here
         });
     }
-
+    
     // --- CHAT LOGIC ---
     function sendChat(msg) {
         socket.emit("sendChat", {
@@ -239,7 +239,7 @@
             if (el) makeDraggable(el);
         });
     });
-    
+
 </script>
 </body>
 </html>

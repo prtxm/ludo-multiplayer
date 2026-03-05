@@ -128,8 +128,11 @@
         });
         document.getElementById("lobby-status").innerHTML = statusText;
         
-        if (window.myPlayerId === 0 && players.length >= 1) {
+        // 🔥 FIX: Only show button if I am Host AND there are at least 2 players
+        if (window.myPlayerId === 0 && players.length >= 2) {
             document.getElementById("startGameBtn").style.display = "block";
+        } else {
+            document.getElementById("startGameBtn").style.display = "none";
         }
     });
 
@@ -141,8 +144,11 @@
         });
         document.getElementById("lobby-status").innerHTML = statusText;
         
-        if (window.myPlayerId === 0 && players.length >= 1) {
+        // 🔥 FIX: Only show button if I am Host AND there are at least 2 players
+        if (window.myPlayerId === 0 && players.length >= 2) {
             document.getElementById("startGameBtn").style.display = "block";
+        } else {
+            document.getElementById("startGameBtn").style.display = "none";
         }
     });
 
