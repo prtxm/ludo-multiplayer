@@ -96,30 +96,35 @@
 
     // --- LOBBY & CONNECTION LOGIC ---
     function joinMultiplayerRoom() {
-        const name = document.getElementById("playerName").value;
-        const code = document.getElementById("roomCode").value;
-        
-        document.getElementById('playerName').blur();
-        document.getElementById('roomCode').blur();
-        window.scrollTo(0, 0);
-        
+        const nameInput = document.getElementById("playerName");
+        const codeInput = document.getElementById("roomCode");
+        const status = document.getElementById("lobby-status");
+
+        const name = nameInput.value.trim();
+        const code = codeInput.value.trim();
+
         if (!name || !code) {
-            showNotification("Please enter both a Name and a Room Code!");
+            showNotification("Enter your name and a room code!");
             return;
         }
-        
-        // FOOLPROOF FIX: Finds the button by its click action so it never crashes
-        // even if the HTML ID is missing.
-        const joinBtn = document.querySelector('button[onclick="joinMultiplayerRoom()"]');
-        if (joinBtn) {
-            joinBtn.style.display = "none";
+
+        // Try to hide the UI, but don't let a UI error stop the game from joining
+        try {
+            const btn = document.querySelector('button[onclick="joinMultiplayerRoom()"]') || document.getElementById("joinRoomBtn");
+            if (btn) btn.style.display = "none";
+            
+            // Also hide inputs to prevent double-joining
+            nameInput.style.display = "none";
+            codeInput.style.display = "none";
+        } catch (e) {
+            console.warn("UI hiding failed, but joining anyway...", e);
         }
-        
+
         window.myRoomCode = code;
         socket.emit("joinRoom", { playerName: name, roomCode: code });
-        document.getElementById("lobby-status").innerText = "Connecting to room...";
-    }
-    
+        status.innerText = "Connecting to " + code + "...";
+    }    
+
     // FIX 3: Centralized function to safely check host UI
     function updateStartButtonVisibility() {
         const startBtn = document.getElementById("startGameBtn");
@@ -216,8 +221,11 @@
     function startPhaserGame() {
         new Phaser.Game({
             type: Phaser.AUTO,
-            width: 1200, height: 1200, transparent: true,
-            parent: "game-container", scene: LudoGame
+            width: 1200, 
+            height: 1200, 
+            transparent: true,
+            parent: "game-container", 
+            scene: LudoGame,
             // ADD THIS FPS BLOCK:
             fps: {
                 target: 60,
@@ -227,7 +235,6 @@
             }
         });
     }
-
     // --- CHAT LOGIC ---
     function sendChat(msg) {
         socket.emit("sendChat", {
@@ -366,6 +373,7 @@
         const setupCard = document.querySelector('.setup-card');
         if (setupCard) makeDraggable(setupCard);
     });
+    
 </script>
 <audio id="diceSound" src="assets/dice-roll.mp3" preload="auto"></audio>
 <script>
@@ -385,5 +393,6 @@
         }
     };
 </script>
+
 </body>
 </html>
