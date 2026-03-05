@@ -93,7 +93,7 @@
     window.myRoomCode = "";
     window.playerNames = ["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"];
     window.currentPlayersCount = 0; // Track players globally for the button check
-    
+
     // --- LOBBY & CONNECTION LOGIC ---
     function joinMultiplayerRoom() {
         const name = document.getElementById("playerName").value;
@@ -108,18 +108,38 @@
             return;
         }
         
+        // FOOLPROOF FIX: Finds the button by its click action so it never crashes
+        // even if the HTML ID is missing.
+        const joinBtn = document.querySelector('button[onclick="joinMultiplayerRoom()"]');
+        if (joinBtn) {
+            joinBtn.style.display = "none";
+        }
+        
         window.myRoomCode = code;
         socket.emit("joinRoom", { playerName: name, roomCode: code });
         document.getElementById("lobby-status").innerText = "Connecting to room...";
+    }
+    
+    // FIX 3: Centralized function to safely check host UI
+    function updateStartButtonVisibility() {
+        const startBtn = document.getElementById("startGameBtn");
+        // Only show if explicitly confirmed as ID 0 (Host)
+        if (window.myPlayerId === 0 && window.currentPlayersCount >= 1) {
+            startBtn.style.display = "block";
+        } else {
+            startBtn.style.display = "none";
+        }
     }
 
     socket.on("joined", (playerInfo) => {
         window.myPlayerId = playerInfo.id;
         console.log("I am Player ID: " + window.myPlayerId);
+        updateStartButtonVisibility(); // Re-evaluate button now that ID is confirmed
     });
 
     socket.on("joinedSuccess", (playerInfo) => {
         window.myPlayerId = playerInfo.id;
+        updateStartButtonVisibility(); // Re-evaluate button now that ID is confirmed
     });
 
     socket.on("updatePlayers", (players) => {
@@ -130,15 +150,8 @@
         });
         document.getElementById("lobby-status").innerHTML = statusText;
 
-        // --- HOST CHECK ---
-        const startBtn = document.getElementById("startGameBtn");
-        
-        // Ensure ONLY Player 0 (Host) sees the button AND at least 2 players are present
-        if (window.myPlayerId === 0 && players.length >= 1) {
-            startBtn.style.display = "block";
-        } else {
-            startBtn.style.display = "none";
-        }
+        window.currentPlayersCount = players.length;
+        updateStartButtonVisibility();
     });
 
     socket.on("roomUpdated", (players) => {
@@ -149,17 +162,12 @@
         });
         document.getElementById("lobby-status").innerHTML = statusText;
         
-        const startBtn = document.getElementById("startGameBtn");
-        if (window.myPlayerId === 0 && players.length >= 1) {
-            startBtn.style.display = "block";
-        } else {
-            startBtn.style.display = "none";
-        }
+        window.currentPlayersCount = players.length;
+        updateStartButtonVisibility();
     });
 
     socket.on("joinError", (msg) => {
         showNotification(msg + " - Reloading in 5 seconds...");
-        // Timeout to reload the site automatically
         setTimeout(() => window.location.reload(), 5000);
     });
 
@@ -167,10 +175,12 @@
         showNotification("Room is full! Try a different code. Reloading...");
         setTimeout(() => window.location.reload(), 4000);
     });
+    
     socket.on("hostLeft", () => {
         showNotification("The host disconnected! Room closed. Reloading...");
         setTimeout(() => window.location.reload(), 3000);
     });
+    
     socket.on("roomClosed", () => {
         showNotification("The room has been closed.");
         setTimeout(() => window.location.reload(), 2000);
@@ -208,6 +218,13 @@
             type: Phaser.AUTO,
             width: 1200, height: 1200, transparent: true,
             parent: "game-container", scene: LudoGame
+            // ADD THIS FPS BLOCK:
+            fps: {
+                target: 60,
+                forceSetTimeOut: true, // Uses background-safe timers instead of requestAnimationFrame
+                deltaHistory: 10,
+                panicMax: 120 // Prevents the "Delta Explosion" crash when returning to the tab
+            }
         });
     }
 
@@ -351,5 +368,22 @@
     });
 </script>
 <audio id="diceSound" src="assets/dice-roll.mp3" preload="auto"></audio>
+<script>
+    // Create an inline Web Worker to keep the tab alive in the background
+    const keepAliveCode = `
+        setInterval(() => {
+            postMessage('ping');
+        }, 10000); // Ping every 10 seconds
+    `;
+    const blob = new Blob([keepAliveCode], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    
+    worker.onmessage = function(e) {
+        if (e.data === 'ping' && window.socket && window.socket.connected) {
+            // Keep the socket connection active
+            window.socket.emit("keepAlivePing"); 
+        }
+    };
+</script>
 </body>
 </html>

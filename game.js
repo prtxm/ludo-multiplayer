@@ -14,6 +14,12 @@ class  LudoGame extends Phaser.Scene {
     }
 
     create() {
+        // PREVENT PHASER FROM PAUSING WHEN TAB IS HIDDEN
+        this.game.events.off('hidden', this.game.onHidden, this.game);
+        this.game.events.off('visible', this.game.onVisible, this.game);
+        
+        // Disable automatic pausing of audio on blur
+        this.sound.pauseOnBlur = false;
 
         window.gameScene = this;
 

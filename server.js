@@ -5,7 +5,13 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server); // Initializes Socket.io
+// Inside server.js
+const io = require("socket.io")(server, {
+    pingInterval: 25000, // Send a ping every 25 seconds
+    pingTimeout: 120000, // Wait up to 2 MINUTES before disconnecting a player (allows for heavy background throttling)
+    cors: { origin: "*" }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(__dirname));
