@@ -78,28 +78,6 @@ class  LudoGame extends Phaser.Scene {
         this.updateTurnUI();
         this.finishedRanks = []; // Tracks who won 1st, 2nd, etc.
         this.updateScoreboard(); // Initialize UI
-
-        // --- DEVELOPER TESTING CONTROLS ---
-        this.input.keyboard.on('keydown-W', () => {
-            console.log("DEV: Teleporting current player's piece to the Win Entry!");
-            let player = this.players[this.currentPlayerIndex];
-            let piece = player.pieces.find(p => !p.isFinished);
-            if (piece) {
-                piece.inMiddle = true;
-                piece.middleIndex = 5; // One step away from winning
-                this.arrangePieces();
-            }
-        });
-
-        this.input.keyboard.on('keydown-ONE', () => {
-            console.log("DEV: Forcing Dice to 1");
-            this.processDiceRoll(1);
-        });
-
-        this.input.keyboard.on('keydown-SIX', () => {
-            console.log("DEV: Forcing Dice to 6");
-            this.processDiceRoll(6);
-        });
     }
     
 
@@ -794,7 +772,7 @@ class  LudoGame extends Phaser.Scene {
             });
         });
     }
-    
+
     arrangePieces() {
         let tileMap = {};
 
