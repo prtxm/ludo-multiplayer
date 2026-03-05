@@ -292,69 +292,62 @@ class  LudoGame extends Phaser.Scene {
     }
 
     createPlayers() {
-        let activeIds = window.activePlayers ? window.activePlayers.map(p => p.id) : [0, 1, 2, 3, 4, 5];
+        let activeIds = window.activePlayers ? window.activePlayers.map(p => p.id) : [0];
 
         for (let i = 0; i < 6; i++) {
-            let playerName = this.colors[i].name;
-            if (window.activePlayers) {
-                let joinedPlayer = window.activePlayers.find(p => p.id === i);
-                if (joinedPlayer) playerName = joinedPlayer.name;
-            } else if (window.playerNames) {
-                playerName = window.playerNames[i];
-            }
+            let isHuman = activeIds.includes(i);
+            let playerName = isHuman ? 
+                (window.activePlayers ? window.activePlayers.find(p => p.id === i).name : window.playerNames[i]) 
+                : "BOT " + this.colors[i].name;
 
-            // Create the player object with a NEW isActive flag
             let player = { 
                 id: i, 
                 name: playerName,
                 pieces: [],
-                isActive: activeIds.includes(i) 
+                isActive: true, // Everyone plays now!
+                isBot: !isHuman
             };
             
-            // ONLY spawn gutis if the player actually joined
-            // ONLY spawn gutis if the player actually joined
-            if (player.isActive) {
-                let home = this.homeCircles[i];
-                const spread = home.radius * 0.45;
-                const radius = 11; // Defined here for easy reuse
+            let home = this.homeCircles[i];
+            const spread = home.radius * 0.45;
+            const radius = 11; 
 
-                [45, 135, 225, 315].forEach(deg => {
-                    let rad = Phaser.Math.DegToRad(deg);
-                    
-                    let piece = this.add.circle(
-                        home.x + Math.cos(rad) * spread,
-                        home.y + Math.sin(rad) * spread,
-                        radius, 
-                        this.colors[i].value
-                    )
-                    .setStrokeStyle(2, 0x000000, 1) 
-                    .setDepth(2000);
+            [45, 135, 225, 315].forEach(deg => {
+                let rad = Phaser.Math.DegToRad(deg);
+                
+                let piece = this.add.circle(
+                    home.x + Math.cos(rad) * spread,
+                    home.y + Math.sin(rad) * spread,
+                    radius, 
+                    this.colors[i].value
+                )
+                .setStrokeStyle(2, 0x000000, 1) 
+                .setDepth(2000);
 
-                    piece.homeX = piece.x;
-                    piece.homeY = piece.y;
-                    piece.playerId = i;
-                    piece.pathIndex = -1;
-                    piece.lapCount = 0;
-                    piece.tilesMoved = 0; 
-                    piece.inMiddle = false;
-                    piece.middleIndex = -1;
-                    piece.isFinished = false;
+                piece.homeX = piece.x;
+                piece.homeY = piece.y;
+                piece.playerId = i;
+                piece.pathIndex = -1;
+                piece.lapCount = 0;
+                piece.tilesMoved = 0; 
+                piece.inMiddle = false;
+                piece.middleIndex = -1;
+                piece.isFinished = false;
 
-                    const hitAreaPadding = 30; // Expanding touch target
-                    
-                    piece.setInteractive({
-                        // Using the exact radius (11) for the local center X, center Y, and total size
-                        hitArea: new Phaser.Geom.Circle(radius, radius, radius + hitAreaPadding),
-                        hitAreaCallback: Phaser.Geom.Circle.Contains,
-                        useHandCursor: true
-                    });
-                    
-                    piece.on("pointerdown", () => this.tryMove(piece));
-                    player.pieces.push(piece);
+                const hitAreaPadding = 30;
+                
+                piece.setInteractive({
+                    hitArea: new Phaser.Geom.Circle(radius, radius, radius + hitAreaPadding),
+                    hitAreaCallback: Phaser.Geom.Circle.Contains,
+                    useHandCursor: true
                 });
-            }
+                
+                piece.on("pointerdown", () => {
+                    if(!player.isBot) this.tryMove(piece);
+                });
+                player.pieces.push(piece);
+            });
             
-            // ALWAYS push the player so the array stays at length 6
             this.players.push(player);
         }
     }
@@ -388,67 +381,43 @@ class  LudoGame extends Phaser.Scene {
     // Handles the actual dice logic for both the roller and the receivers
     // Handles the actual dice logic with a rolling animation
     async processDiceRoll(val) {
-
         this.diceValue = val;
-
         const diceNumber = document.getElementById("diceNumber");
         const diceIcon = document.getElementById("diceIcon");
         const rollBtn = document.getElementById("rollBtn");
 
         if (!diceNumber || !diceIcon) return;
 
-        // Disable UI
         if (rollBtn) rollBtn.disabled = true;
         this.isMoving = true;
 
-        // 🔊 Play Dice Sound
         if (this.diceSound) {
             this.diceSound.stop();
             this.diceSound.play();
         }
 
-        // 🎲 Animate ONLY icon
         diceIcon.classList.add("diceRolling");
-
-        // Shuffle numbers effect
         for (let i = 0; i < 10; i++) {
             let randomValue = Phaser.Math.Between(1, 6);
             diceNumber.textContent = randomValue;
             await new Promise(resolve => this.time.delayedCall(70, resolve));
         }
 
-        // Final number
         diceNumber.textContent = val;
-
-        // Wait for animation to finish
         await new Promise(resolve => setTimeout(resolve, 600));
         diceIcon.classList.remove("diceRolling");
 
         this.isMoving = false;
-
         let player = this.players[this.currentPlayerIndex];
 
+        // FIXED: Corrected path checking logic to prevent JS crashing
         let canMove = player.pieces.some(piece => {
-
             if (piece.isFinished) return false;
-
-            if (piece.pathIndex === -1) {
-                return this.diceValue === 6;
-            }
-
-            if (piece.inMiddle) {
-                const WIN_INDEX = 6;
-                const required = WIN_INDEX - piece.middleIndex;
-                return this.diceValue <= required;
-            }
-
-            const nextIndex = piece.pathIndex + this.diceValue;
-
-            if (nextIndex >= this.mainPath.length) {
-                const stepsIntoMiddle = nextIndex - this.mainPath.length;
-                return stepsIntoMiddle <= 6;
-            }
-
+            if (piece.pathIndex === -1) return this.diceValue === 6;
+            if (piece.inMiddle) return this.diceValue <= (6 - piece.middleIndex);
+            
+            let projectedTilesMoved = piece.tilesMoved + this.diceValue;
+            if (projectedTilesMoved > 56) return false;
             return true;
         });
 
@@ -459,8 +428,16 @@ class  LudoGame extends Phaser.Scene {
                 this.nextTurn();
             });
         } else {
-            if (rollBtn && window.myPlayerId === this.currentPlayerIndex) {
+            if (rollBtn && window.myPlayerId === this.currentPlayerIndex && !player.isBot) {
                 rollBtn.disabled = false;
+            }
+            
+            // Trigger Bot piece selection (Host manages bots)
+            let hostId = window.activePlayers ? window.activePlayers[0].id : 0;
+            if (player.isBot && window.myPlayerId === hostId) {
+                this.time.delayedCall(600, () => {
+                    this.makeBotMove(player);
+                });
             }
         }
     } 
@@ -510,6 +487,25 @@ class  LudoGame extends Phaser.Scene {
     // --- UPDATED TRYMOVE (Fix Lane Entry) ---
     async tryMove(piece, isRemote = false) {
         let player = this.players[this.currentPlayerIndex];
+        // --- 🔒 CLICK RESTRICTION LOGIC ---
+        // 1. Only restrict if online, it's a human, AND it is a local mouse click (not a remote server signal)
+        if (window.activePlayers && !player.isBot && !isRemote) {
+            // Cannot touch other human players' pieces
+            if (piece.playerId !== window.myPlayerId) {
+                console.log("You can only move your own pieces!");
+                return;
+            }
+            // Cannot touch pieces if it's not your turn
+            if (this.currentPlayerIndex !== window.myPlayerId) {
+                console.log("It's not your turn!");
+                return;
+            }
+        }
+        // ----------------------------------
+
+        if (this.isMoving) return;
+        if (this.currentPlayerIndex !== piece.playerId) return; 
+        if (this.diceValue === 0) return;
         
         // --- 1. BASIC CHECKS (Applies to both local and remote) ---
         if (this.diceValue === 0 || this.isMoving || piece.isFinished) return;
@@ -528,20 +524,19 @@ class  LudoGame extends Phaser.Scene {
 
         // --- 3. MULTIPLAYER BROADCAST (Only send if the move is actually valid!) ---
         if (!isRemote) {
-            if (window.myPlayerId !== this.currentPlayerIndex) {
-                console.log("Not your turn!");
-                return;
-            }
-            if (piece.playerId !== window.myPlayerId) {
-                console.log("You can only move your own pieces!");
-                return;
+            let hostId = window.activePlayers ? window.activePlayers[0].id : 0;
+            
+            if (player.isBot) {
+                if (window.myPlayerId !== hostId) return; // Only host emits bot moves
+            } else {
+                if (window.myPlayerId !== this.currentPlayerIndex) return; 
+                if (piece.playerId !== window.myPlayerId) return; 
             }
 
-            // Move is 100% valid. Tell everyone else!
             let pieceIndex = player.pieces.indexOf(piece);
             window.socket.emit("movePiece", {
                 roomCode: window.myRoomCode,
-                playerId: window.myPlayerId,
+                playerId: player.id,
                 pieceIndex: pieceIndex
             });
         }
@@ -564,8 +559,18 @@ class  LudoGame extends Phaser.Scene {
             await this.animateTo(piece, this.globalOuterPath[piece.pathIndex]);
             this.arrangePieces(); 
 
-            if (!rolledSix) this.nextTurn();
-            return;
+            // 🔥 FIX: Ensure the bot is told to roll again after bringing a piece out
+            if (!rolledSix) {
+                this.nextTurn();
+            } else {
+                console.log("Extra Turn Granted (Base Exit)!");
+                this.resetForNextRoll();
+                
+                if (player.isBot) {
+                    this.triggerBotTurn();
+                }
+            }
+            return; // Function exits here after spawning
         }
 
         if (piece.inMiddle) {
@@ -581,7 +586,7 @@ class  LudoGame extends Phaser.Scene {
             if (!piece.inMiddle) {
                 let currentTile = this.globalOuterPath[piece.pathIndex];
 
-                if (piece.tilesMoved >= 50 && currentTile.row === 0 && currentTile.col === 0 && currentTile.player === player.id) {
+                if (piece.tilesMoved >= 70 && currentTile.row === 0 && currentTile.col === 0 && currentTile.player === player.id) {
                     piece.inMiddle = true;
                     piece.middleIndex = 1; 
                     await this.animateTo(piece, this.middleLanes[player.id][piece.middleIndex]);
@@ -668,6 +673,11 @@ class  LudoGame extends Phaser.Scene {
 
             // IMPORTANT: properly reset dice state
             this.resetForNextRoll();
+
+            // 🔥 NEW: If the current player is a bot, trigger their extra roll automatically
+            if (player.isBot) {
+                this.triggerBotTurn();
+            }
         }
 
         this.updateScoreboard();
@@ -749,18 +759,25 @@ class  LudoGame extends Phaser.Scene {
         return new Promise(resolve => {
             this.tweens.add({
                 targets: piece,
-                x: tile.x,
-                y: tile.y,
-                // Rotate the piece towards the destination
-                angle: Phaser.Math.RadToDeg(angleToTile) + 90, 
-                duration: 170,
-                ease: "Back.easeOut",
-                onComplete: () => {
-                    this.time.delayedCall(70, () => {
-                        this.isMoving = false;
-                        resolve();
+                x: tile.x || (this.centerX + tile.x), // Adjust based on your coordinate system
+                y: tile.y || (this.centerY + tile.y),
+                duration: 250,
+                ease: 'Sine.easeInOut',
+                onUpdate: () => {
+                    // 🔥 CREATE TRAIL EFFECT 🔥
+                    let trail = this.add.circle(piece.x, piece.y, 9, piece.fillColor)
+                        .setDepth(1999) // Just below the piece (2000)
+                        .setAlpha(0.6);
+                    
+                    this.tweens.add({
+                        targets: trail,
+                        alpha: 0,
+                        scale: 0.2,
+                        duration: 400,
+                        onComplete: () => trail.destroy()
                     });
-                }
+                },
+                onComplete: resolve
             });
         });
     }
@@ -838,61 +855,183 @@ class  LudoGame extends Phaser.Scene {
     // --------------------
 
     nextTurn() {
-        let totalActive = window.activePlayers ? window.activePlayers.length : 6;
-        
-        // End game if all but one active player has finished
-        if (this.finishedRanks.length >= totalActive - 1 && totalActive > 1) {
+        if (this.finishedRanks.length >= 5) { // Stop when 5 players finish
             document.getElementById("turnDisplay").innerText = "GAME OVER";
             return; 
         }
 
         let loopSafeguard = 0;
         do {
-            // Loop through the 6 IDs
             this.currentPlayerIndex = (this.currentPlayerIndex + 1) % 6;
             loopSafeguard++;
-            
-        // Keep skipping IF the player has already finished OR if the player is NOT active
         } while (
             loopSafeguard < 10 && 
-            (this.finishedRanks.includes(this.currentPlayerIndex) || !this.players[this.currentPlayerIndex].isActive)
+            this.finishedRanks.includes(this.currentPlayerIndex)
         );
 
         this.updateTurnUI();
+        this.triggerBotTurn();
     }
 
     updateTurnUI() {
         const playerColor = this.colors[this.currentPlayerIndex];
+        const playerObj = this.players[this.currentPlayerIndex];
         const turnText = document.getElementById("turnDisplay");
-        // Check for both possible button IDs since we might have renamed it
-        const rollBtn = document.getElementById("rollButton") || document.getElementById("rollBtn");
+        const rollBtn = document.getElementById("rollBtn") || document.getElementById("rollButton");
 
-        if (!turnText || !rollBtn) return; // Safety: exit if elements aren't found yet
+        if (!turnText || !rollBtn) return;
 
-        // Show whose turn it is
-        turnText.innerText = playerColor.name + "'S TURN";
+        turnText.innerText = playerObj.name + "'S TURN";
 
-        // Logic: Only the person whose turn it is gets to see/click the button
-        if (window.myPlayerId === this.currentPlayerIndex) {
-            rollBtn.style.display = "block"; // Show button for the active player
+        if (window.myPlayerId === this.currentPlayerIndex && !playerObj.isBot) {
+            rollBtn.style.display = "block";
             turnText.innerText += " (YOU)";
-            
-            // Re-enable button if it was disabled during movement
             if (!this.isMoving) rollBtn.disabled = false; 
         } else {
-            rollBtn.style.display = "none";  // Hide button for everyone else
+            rollBtn.style.display = "none";
         }
         
-        // --- UI POLISH: Windows 11 Dynamic Colors ---
         const hexColor = this.formatHex(playerColor.value);
-        
-        // Update Button Color Dynamically
         rollBtn.style.background = `linear-gradient(135deg, ${hexColor} 0%, #222 150%)`;
         rollBtn.style.boxShadow = `0 10px 20px ${hexColor}44`;
-        
-        // Update Turn Text Glow
         turnText.style.color = hexColor;
         turnText.style.textShadow = `0 0 10px ${hexColor}66`;
+    }
+
+    triggerBotTurn() {
+        let playerObj = this.players[this.currentPlayerIndex];
+        let hostId = window.activePlayers && window.activePlayers.length > 0 ? window.activePlayers[0].id : 0;
+        
+        if (playerObj.isBot && window.myPlayerId === hostId) {
+            this.time.delayedCall(1000, () => {
+                if (this.isMoving || this.diceValue > 0) return;
+                let val = Phaser.Math.Between(1, 6);
+                window.socket.emit("rollDice", {
+                    roomCode: window.myRoomCode,
+                    diceValue: val,
+                    playerId: this.currentPlayerIndex
+                });
+                this.processDiceRoll(val);
+            });
+        }
+    }
+
+    makeBotMove(player) {
+        let movablePieces = player.pieces.filter(piece => {
+            if (piece.isFinished) return false;
+            if (piece.pathIndex === -1) return this.diceValue === 6;
+            if (piece.inMiddle) return this.diceValue <= (6 - piece.middleIndex);
+            
+            let projectedTilesMoved = piece.tilesMoved + this.diceValue;
+            if (projectedTilesMoved > 56) return false;
+            return true;
+        });
+
+        if (movablePieces.length === 0) return;
+
+        let bestPiece = null;
+        let bestScore = -Infinity;
+
+        movablePieces.forEach(piece => {
+            let score = 0;
+
+            // 1. SPAWNING A NEW PIECE
+            if (piece.pathIndex === -1) {
+                score += 400; 
+            } 
+            
+            // 2. PIECE IS ALREADY IN THE MIDDLE LANE
+            else if (piece.inMiddle) {
+                let targetMiddleIndex = piece.middleIndex + this.diceValue;
+                if (targetMiddleIndex === 6) {
+                    score += 1000; // 🏆 WINNING MOVE
+                } else {
+                    score += 50;   // Safely advancing inside middle lane
+                }
+            } 
+            
+            // 3. MOVING ON THE MAIN BOARD (OUTER PATH)
+            else {
+                let projectedTilesMoved = piece.tilesMoved + this.diceValue;
+                
+                // --- A. Entering the middle lane ---
+                if (projectedTilesMoved >= 50) {
+                    let targetMiddleIndex = projectedTilesMoved - 50;
+                    if (targetMiddleIndex === 6) {
+                        score += 1000; // 🏆 WINNING MOVE exactly from outer track
+                    } else {
+                        score += 300;  // 🛡️ Safe! Getting into middle lane
+                    }
+                } 
+                
+                // --- B. Staying on the outer path ---
+                else {
+                    let targetPathIndex = (piece.pathIndex + this.diceValue) % this.globalOuterPath.length;
+                    let targetTile = this.globalOuterPath[targetPathIndex];
+                    
+                    // ⚔️ CHECK FOR KILLS
+                    let canKill = false;
+                    if (!targetTile.isStar) { // Can't kill on a star
+                        for (let otherPlayer of this.players) {
+                            if (otherPlayer.id === player.id) continue;
+                            for (let oppPiece of otherPlayer.pieces) {
+                                if (!oppPiece.inMiddle && oppPiece.pathIndex === targetPathIndex && !oppPiece.isFinished) {
+                                    canKill = true;
+                                    break;
+                                }
+                            }
+                            if (canKill) break;
+                        }
+                    }
+                    if (canKill) score += 500; // Huge priority to kill
+
+                    // ⭐ LANDING ON A SAFE STAR
+                    if (targetTile.isStar) {
+                        score += 150;
+                    }
+
+                    // 🏃 ESCAPING DANGER
+                    let currentlyInDanger = false;
+                    let currentTile = this.globalOuterPath[piece.pathIndex];
+                    if (!currentTile.isStar) { // If we aren't already safe
+                        for (let otherPlayer of this.players) {
+                            if (otherPlayer.id === player.id) continue;
+                            for (let oppPiece of otherPlayer.pieces) {
+                                if (!oppPiece.inMiddle && oppPiece.pathIndex !== -1 && !oppPiece.isFinished) {
+                                    // Distance from opponent to us
+                                    let dist = (piece.pathIndex - oppPiece.pathIndex + this.globalOuterPath.length) % this.globalOuterPath.length;
+                                    if (dist > 0 && dist <= 5) {
+                                        currentlyInDanger = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (currentlyInDanger) break;
+                        }
+                    }
+                    if (currentlyInDanger) {
+                        score += 200; // Run away!
+                    }
+
+                    // 📏 TIE-BREAKER: Favor moving pieces that are further ahead
+                    score += piece.tilesMoved;
+                }
+            }
+
+            // 🎲 Add a tiny random factor (0 to 9) so the bot breaks ties naturally
+            score += Phaser.Math.Between(0, 9);
+
+            // Keep track of the piece with the highest score
+            if (score > bestScore) {
+                bestScore = score;
+                bestPiece = piece;
+            }
+        });
+
+        // Execute the best calculated move
+        if (bestPiece) {
+            this.tryMove(bestPiece);
+        }
     }
 
     // Helper function to convert Phaser hex to CSS hex
