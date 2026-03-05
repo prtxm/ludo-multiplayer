@@ -128,11 +128,12 @@
         });
         document.getElementById("lobby-status").innerHTML = statusText;
         
-        // 🔥 FIX: Only show button if I am Host AND there are at least 2 players
+        // Ensure ONLY Player 0 (Host) sees the button AND at least 2 players are present
+        const startBtn = document.getElementById("startGameBtn");
         if (window.myPlayerId === 0 && players.length >= 2) {
-            document.getElementById("startGameBtn").style.display = "block";
+            startBtn.style.display = "block";
         } else {
-            document.getElementById("startGameBtn").style.display = "none";
+            startBtn.style.display = "none";
         }
     });
 
@@ -144,11 +145,11 @@
         });
         document.getElementById("lobby-status").innerHTML = statusText;
         
-        // 🔥 FIX: Only show button if I am Host AND there are at least 2 players
+        const startBtn = document.getElementById("startGameBtn");
         if (window.myPlayerId === 0 && players.length >= 2) {
-            document.getElementById("startGameBtn").style.display = "block";
+            startBtn.style.display = "block";
         } else {
-            document.getElementById("startGameBtn").style.display = "none";
+            startBtn.style.display = "none";
         }
     });
 
