@@ -180,3 +180,32 @@ canvas {
 .diceRolling {
     animation: spinDice 0.8s ease-in-out;
 }
+
+.input-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+    text-align: left;
+    font-weight: bold;
+    text-transform: uppercase;
+
+}.input-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+    text-align: left;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+#timer-container {
+    border: 1px solid #ccc;
+}
+#timer-bar.warning {
+    background: #ffa502; /* Turns orange when half done */
+}
+#timer-bar.danger {
+    background: #ff4757; /* Turns red when almost done */
+}

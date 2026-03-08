@@ -30,6 +30,12 @@ const rooms = {};
 io.on("connection", (socket) => {
     console.log("A player connected: " + socket.id);
 
+    // Add this inside io.on("connection" in server.js
+    socket.on("keepAlivePing", () => {
+        // This acknowledges the ping from the Web Worker to keep the connection hot
+        // socket.emit("keepAlivePong"); // Optional: send a response back
+    });
+
     // 1. Handle a player joining a room
     socket.on("joinRoom", ({ playerName, roomCode }) => {
         if (!rooms[roomCode]) {

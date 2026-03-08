@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/png" href="favicon.png">
     <script>
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
             window.location.href = "mobile.html";
@@ -20,27 +21,33 @@
     <div class="setup-card">
         <h1>MULTIPLAYER LUDO</h1>
         <p>Enter your name and a Room Code</p>
-        
         <div class="input-grid" style="grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px;">
+                
             <div class="input-group">
-                <input type="text" id="playerName" placeholder="Your Name (e.g., Rahul)" class="mica-input" style="width: 90%;">
+                <label for="playerName"></label>
+                <input type="text" id="playerName" name="playerName" placeholder="Name (e.g. Pritam)" autocomplete="name">
             </div>
-            <div class="input-group">
-                <input type="text" id="roomCode" placeholder="Room Code (e.g., 1234)" class="mica-input" style="width: 90%;">
-            </div>
-        </div>
 
-        <button class="action-btn" onclick="joinMultiplayerRoom()">JOIN / CREATE ROOM</button>
+            <div class="input-group">
+                <label for="roomCode"></label>
+                <input type="text" id="roomCode" name="roomCode" placeholder="Room Code (e.g. 1234)" autocomplete="off">
+            </div>
+
+        </div>
+        <button class="action-btn" onclick="joinMultiplayerRoom()"style="color: #000000;">JOIN / CREATE ROOM</button>
         
         <div id="lobby-status" style="margin-top: 20px; color: #4fc3f7; font-weight: bold;"></div>
         
-        <button id="startGameBtn" class="action-btn" onclick="startMultiplayerGame()" style="margin-top: 15px; display: none; background: #00c853;">START GAME (HOST ONLY)</button>
+        <button id="startGameBtn" class="action-btn" onclick="startMultiplayerGame()" style="margin-top: 15px; display: none; background: #00c853;">START GAME</button>
     </div>
 </div>
 
 <div id="game-ui" style="display: none;">
     
     <div id="ui-panel" class="mica-panel">
+        <div id="timer-container" style="display:none; width: 100%; height: 10px; background: #eee; border-radius: 5px; margin-top: 10px; overflow: hidden;">
+            <div id="timer-bar" style="width: 100%; height: 100%; background: #ff4757; transition: width 0.1s linear;"></div>
+        </div>
         <div class="label">Current Turn</div>
         <div id="turnDisplay">RED'S TURN</div>
         
@@ -61,10 +68,10 @@
         <div class="label">Quick Chat</div>
         <div id="chat-messages" style="height: 100px; overflow-y: auto; font-size: 12px; margin-bottom: 10px; color: #ccc;"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-            <button class="action-btn" onclick="sendChat('Hello!')" style="padding: 5px;">Hello!</button>
-            <button class="action-btn" onclick="sendChat('Hurry up!')" style="padding: 5px;">Hurry up!</button>
-            <button class="action-btn" onclick="sendChat('Oops!')" style="padding: 5px;">Oops!</button>
-            <button class="action-btn" onclick="sendChat('Good Game!')" style="padding: 5px;">Good Game!</button>
+            <button class="action-btn" onclick="sendChat('Hello!')" style="padding: 5px; color: #000000;">Hello!</button>
+            <button class="action-btn" onclick="sendChat('Hurry up!')" style="padding: 5px; color: #000000;">Hurry up!</button>
+            <button class="action-btn" onclick="sendChat('Oops!')" style="padding: 5px; color: #000000;">Oops!</button>
+            <button class="action-btn" onclick="sendChat('Good Game!')" style="padding: 5px; color: #000000;">Good Game!</button>
         </div>
     </div>
 
@@ -250,6 +257,47 @@
         chatBox.scrollTop = chatBox.scrollHeight;
         showNotification(`${data.playerName}: ${data.text}`);
     });
+
+    let audioCtx;
+
+    function activateKeepAliveHack() {
+        const startAudio = () => {
+            // 1. Create the Audio Context
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // 2. Resume if suspended by the browser
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // 3. Create a silent continuous sound wave
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            // Set volume to absolutely zero (silent)
+            gainNode.gain.value = 0; 
+            
+            // Connect and play
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            
+            console.log("🟢 Web Audio Keep-Alive Active! State:", audioCtx.state);
+            
+            // Remove listeners so it only triggers once
+            document.removeEventListener('click', startAudio);
+            document.removeEventListener('touchstart', startAudio);
+        };
+
+        // Attach to the first user interaction
+        document.addEventListener('click', startAudio, { once: true });
+        document.addEventListener('touchstart', startAudio, { once: true });
+    }
+
+    // Initialize
+    activateKeepAliveHack();
 
     // --- YOUTUBE LOGIC ---
     let ytPlayer;
