@@ -1217,6 +1217,27 @@ class  LudoGame extends Phaser.Scene {
     }
 
 }
+/* =========================================================
+   📱 ISOLATED MOBILE CANVAS SCALING CONFIG
+   ========================================================= */
+const config = {
+    // ... [KEEP YOUR EXISTING CONFIG HERE: type, parent, scene, physics, etc.] ...
+
+    // 👇 DROP THIS IN AS A SEPARATE SECTION 👇
+    scale: {
+        // FIT automatically shrinks the game to fit the screen without stretching
+        mode: Phaser.Scale.FIT, 
+        
+        // Centers the board horizontally and vertically within its new mobile container
+        autoCenter: Phaser.Scale.CENTER_BOTH, 
+        
+        // KEEP your original desktop dimensions here (e.g., 800x800 or whatever you used). 
+        // Phaser will use this as the baseline and scale down automatically for mobile.
+        width: 800,  
+        height: 800,
+    },
+    // 👆 END OF SCALING SECTION 👆
+};
 // Replace your new Phaser.Game config at the bottom with this:
 function startPhaserGame() {
     new Phaser.Game({

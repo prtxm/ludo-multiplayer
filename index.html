@@ -59,7 +59,7 @@
         <div id="scoreboard"></div>
     </div>
 
-    <div id="chat-panel" class="mica-panel" style="position: absolute; bottom: 50px; left: 20px; width: 250px;">
+    <div id="chat-panel" class="mica-panel" style="position: absolute; bottom: 50px; left: 20px; width: 250px; top:610px;">
         <div class="label">Quick Chat</div>
         <div id="chat-messages" style="height: 100px; overflow-y: auto; font-size: 12px; margin-bottom: 10px; color: #ccc;"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
@@ -68,17 +68,28 @@
             <button class="action-btn" onclick="sendChat('Oops!')" style="padding: 5px; color: #000000;">Oops!</button>
             <button class="action-btn" onclick="sendChat('Good Game!')" style="padding: 5px; color: #000000;">Good Game!</button>
         </div>
+        <div style="display: flex; gap: 5px; margin-top: 8px;">
+            <input type="text" id="customChatInput" class="mica-input" placeholder="Type a message..." style="flex-grow: 1; min-width: 0; padding: 6px; font-size: 11px; box-sizing: border-box;">
+            <button class="action-btn" onclick="sendCustomMessage()" style="padding: 6px 12px; width: auto !important; font-size: 11px;">Send</button>
+        </div>
     </div>
 
     <div id="media-panel" class="mica-panel" style="position: absolute; top: 20px; left: 1585px; width: 250px; display: none;">
         <div class="label">Music Player (Host Controls)</div>
-        <input type="text" id="ytVideoId" class="mica-input" placeholder="Paste full YouTube Link or ID" style="font-size: 10px; padding: 5px; margin-bottom: 5px;">
-        <button class="action-btn" onclick="broadcastMedia()" style="padding: 5px;">Play for Everyone</button>
         
-        <div class="label" style="margin-top: 10px;">Volume</div>
+        <div id="yt-player-container" style="width: 100%; height: 130px; background: #000; border-radius: 8px; margin-bottom: 10px; overflow: hidden;"></div>
+        
+        <input type="text" id="ytVideoId" class="mica-input" placeholder="Paste YouTube Link or Playlist" style="font-size: 10px; padding: 5px; margin-bottom: 5px; width: 100%; box-sizing: border-box;">
+        <button class="action-btn" onclick="broadcastMedia()" style="padding: 5px; width: 100%; margin-bottom: 10px; color: #000000;">Load & Play</button>
+        
+        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 10px;">
+            <button class="action-btn" onclick="sendMediaControl('prev')" style="padding: 5px 12px; font-size: 12px; color: #000000;">⏮ Prev</button>
+            <button class="action-btn" onclick="sendMediaControl('toggle')" style="padding: 5px 12px; font-size: 12px; color: #000000;">⏯ Play/Pause</button>
+            <button class="action-btn" onclick="sendMediaControl('next')" style="padding: 5px 12px; font-size: 12px; color: #000000;">Next ⏭</button>
+        </div>
+        
+        <div class="label">Volume</div>
         <input type="range" id="volSlider" min="0" max="100" value="50" onchange="changeVolume()" style="width: 100%;">
-        
-        <div id="yt-player-container" style="display: none;"></div>
     </div>
 
     <div id="game-container"></div>
@@ -239,20 +250,69 @@
     }
     // --- CHAT LOGIC ---
     function sendChat(msg) {
-        socket.emit("sendChat", {
-            roomCode: window.myRoomCode,
-            playerName: document.getElementById("playerName").value,
-            text: msg
+        const myName = document.getElementById("playerName").value || "Player";
+        
+        socket.emit("sendChat", { 
+            roomCode: window.myRoomCode, 
+            playerName: myName, 
+            message: msg 
         });
+    }    // --- CUSTOM CHAT LOGIC ---
+    function sendCustomMessage() {
+        const inputBox = document.getElementById("customChatInput");
+        const msg = inputBox.value.trim();
+        const myName = document.getElementById("playerName").value || "Player"; // Fallback if name is empty
+        
+        if (msg !== "") {
+            // Send the message to the server
+            socket.emit("sendChat", { 
+                roomCode: window.myRoomCode, 
+                playerName: myName, 
+                message: msg 
+            });
+            
+            inputBox.value = ""; // Clear the box after sending
+        }
     }
 
-    socket.on("receiveChat", (data) => {
-        const chatBox = document.getElementById("chat-messages");
-        chatBox.innerHTML += `<div><strong style="color: #4fc3f7;">${data.playerName}:</strong> ${data.text}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-        showNotification(`${data.playerName}: ${data.text}`);
+    // Allow pressing "Enter" on the keyboard to send the message
+    document.getElementById("customChatInput").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault(); // Stop default form submission
+            sendCustomMessage();
+        }
     });
 
+    // Receive chat messages from the server and display them
+    // --- UNIVERSAL CHAT RECEIVER ---
+    socket.on("receiveChat", (data) => {
+        const chatBox = document.getElementById("chat-messages");
+        if (!chatBox) return;
+
+        const msgDiv = document.createElement("div");
+        
+        let sender = "Player";
+        let text = "";
+
+        // 1. Check if the server sent an object (Our new custom chat)
+        if (typeof data === 'object' && data !== null) {
+            sender = data.playerName || "Player";
+            text = data.message || data.msg || data.text || "";
+        } 
+        // 2. Check if the server just sent a pure string (Old Quick Chat fallback)
+        else {
+            text = data; 
+        }
+
+        // Only print if there is actual text
+        if (text.trim() !== "") {
+            msgDiv.innerHTML = `<strong style="color: #a855f7;">${sender}:</strong> <span style="color: #fff;">${text}</span>`;
+            chatBox.appendChild(msgDiv);
+            
+            // Auto-scroll to the newest message
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    });
     let audioCtx;
 
     function activateKeepAliveHack() {
@@ -298,37 +358,90 @@
     let ytPlayer;
     function onYouTubeIframeAPIReady() {
         ytPlayer = new YT.Player('yt-player-container', {
-            height: '0', width: '0', videoId: '', playerVars: { 'autoplay': 1, 'controls': 0 }
+            height: '130', // Set height for preview
+            width: '100%', // Set width for preview
+            videoId: '', 
+            playerVars: { 
+                'autoplay': 1, 
+                'controls': 1, // Show basic YouTube controls in the preview
+                'disablekb': 1 
+            }
         });
     }
 
-    // NEW: Function to grab the video ID out of any standard YouTube link
     function extractVideoID(url) {
         let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         let match = url.match(regExp);
-        // If it matches a link format, return the 11 character ID. Otherwise assume the user just typed the ID directly.
         return (match && match[2].length === 11) ? match[2] : url; 
     }
 
     function broadcastMedia() {
         const rawInput = document.getElementById("ytVideoId").value;
-        const vidId = extractVideoID(rawInput); // Extract the ID before sending
-        socket.emit("playMedia", { roomCode: window.myRoomCode, videoId: vidId });
+        
+        // NEW: Check if the user pasted a Playlist link
+        const listMatch = rawInput.match(/[?&]list=([^#\&\?]+)/);
+        
+        if (listMatch) {
+            // It's a playlist, broadcast the playlist ID
+            socket.emit("playMedia", { roomCode: window.myRoomCode, playlistId: listMatch[1] });
+        } else {
+            // It's a single video, broadcast the video ID
+            const vidId = extractVideoID(rawInput); 
+            socket.emit("playMedia", { roomCode: window.myRoomCode, videoId: vidId });
+        }
     }
 
     socket.on("syncMedia", (data) => {
-        if (ytPlayer && ytPlayer.loadVideoById) {
+        if (!ytPlayer) return;
+        
+        if (data.playlistId && ytPlayer.loadPlaylist) {
+            ytPlayer.loadPlaylist({ list: data.playlistId });
+        } else if (data.videoId && ytPlayer.loadVideoById) {
             ytPlayer.loadVideoById(data.videoId);
-            ytPlayer.setVolume(document.getElementById("volSlider").value);
         }
+        
+        ytPlayer.setVolume(document.getElementById("volSlider").value);
     });
 
     function changeVolume() {
-        if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(document.getElementById("volSlider").value);
+        const newVol = document.getElementById("volSlider").value;
+        if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(newVol);
+        if (window.myPlayerId === 0) { 
+            socket.emit("changeVolume", { roomCode: window.myRoomCode, volume: newVol });
+        }
     }
 
+    socket.on("syncVolume", (volume) => {
+        document.getElementById("volSlider").value = volume;
+        if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(volume);
+    });
+
+    // NEW: Send Media Controls (Host only)
+    function sendMediaControl(action) {
+        if (window.myPlayerId === 0) {
+            socket.emit("mediaControl", { roomCode: window.myRoomCode, action: action });
+        }
+    }
+
+    // NEW: Receive Media Controls (Everyone)
+    socket.on("syncMediaControl", (action) => {
+        if (!ytPlayer) return;
+        
+        if (action === 'toggle') {
+            const state = ytPlayer.getPlayerState();
+            if (state === 1) { // 1 means Playing
+                ytPlayer.pauseVideo();
+            } else {
+                ytPlayer.playVideo();
+            }
+        } else if (action === 'next') {
+            ytPlayer.nextVideo();
+        } else if (action === 'prev') {
+            ytPlayer.previousVideo();
+        }
+    });
+
     function checkHostUI() {
-        // Only Player 0 (The Host) will ever have this panel set to display: block!
         if (window.myPlayerId === 0) {
             document.getElementById("media-panel").style.display = "block";
         }
@@ -436,6 +549,16 @@
         }
     };
 </script>
-
+<script>
+    document.body.addEventListener('click', function() {
+        // If Phaser is loaded and the audio is asleep, wake it up!
+        if (window.gameScene && window.gameScene.sound && window.gameScene.sound.context) {
+            if (window.gameScene.sound.context.state === 'suspended') {
+                window.gameScene.sound.context.resume();
+                console.log("Audio Engine Unlocked!");
+            }
+        }
+    }, true); // 'true' ensures it catches the click immediately
+</script>
 </body>
 </html>

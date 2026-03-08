@@ -68,11 +68,11 @@ io.on("connection", (socket) => {
     });
 
     // 2. Chat Broadcast
+    // 5. Handle Custom Chat Messages
+    // 5. Handle Custom & Quick Chat Messages
     socket.on("sendChat", (data) => {
-        io.to(data.roomCode).emit("receiveChat", {
-            playerName: data.playerName,
-            text: data.text
-        });
+        // We bounce the ENTIRE data object exactly as we received it
+        io.to(data.roomCode).emit("receiveChat", data);
     });
 
     // 2. Handle Host starting the game
@@ -84,6 +84,16 @@ io.on("connection", (socket) => {
     // 3. Media Player Sync (Host Only)
     socket.on("playMedia", (data) => {
         io.to(data.roomCode).emit("syncMedia", data);
+    });
+    // 👇 ADD THIS NEW EVENT TO SYNC VOLUME 👇
+    socket.on("changeVolume", (data) => {
+        // Send the new volume to everyone ELSE in the room
+        socket.to(data.roomCode).emit("syncVolume", data.volume);
+    });
+    // Sync Media Controls (Play, Pause, Next, Prev)
+    socket.on("mediaControl", (data) => {
+        // Broadcast the action to everyone in the room
+        io.to(data.roomCode).emit("syncMediaControl", data.action);
     });
 
     // --- ADD THESE NEW MULTIPLAYER EVENTS ---
@@ -119,6 +129,7 @@ io.on("connection", (socket) => {
             }
         }
     });
+
 });
 
 server.listen(PORT, () => {

@@ -209,3 +209,128 @@ canvas {
 #timer-bar.danger {
     background: #ff4757; /* Turns red when almost done */
 }
+
+/* =========================================================
+   📱 MOBILE RESPONSIVE LAYOUT (BRUTE FORCE FIX)
+   ========================================================= */
+/* =========================================================
+   📱 MOBILE EXACT FIT (NO-SCROLL / SPLIT VIEW)
+   ========================================================= */
+/* =========================================================
+   📱 MOBILE EXACT FIT - V3 (NO-SCROLL / SIDE-BY-SIDE)
+   ========================================================= */
+@media screen and (max-width: 850px) {
+    body {
+        height: 100vh !important;
+        overflow: hidden !important; 
+        display: block !important; 
+        position: relative !important;
+    }
+
+    /* 1. MAXIMIZE LUDO BOARD */
+    #game-container {
+        position: absolute !important; 
+        top: 0.5vh !important;
+        left: 1vw !important;
+        width: 98vw !important;  
+        height: 98vw !important; 
+        margin: 0 !important;
+        transform: none !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        overflow: hidden !important;
+    }
+
+    #game-container canvas {
+        width: 180% !important;
+        height: 180% !important;
+        max-width: none !important;
+        max-height: none !important;
+        touch-action: none !important; 
+        flex-shrink: 0 !important; /* Prevents the browser from trying to squish it back down */
+    }
+
+    /* 2. SHARED PANEL SETTINGS */
+    #ui-panel, #chat-panel {
+        position: absolute !important; 
+        transform: none !important;
+        margin: 0 !important;
+        /* Start immediately under the board */
+        top: calc(98vw + 1.5vh) !important; 
+        bottom: 1.5vh !important;
+        background: rgba(20, 20, 20, 0.9) !important;
+        backdrop-filter: blur(10px) !important;
+        padding: 6px !important;
+        border-radius: 10px !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important; ;
+        box-sizing: border-box !important;
+        top: calc(98vw + 4vh) !important; 
+        bottom: 8vh !important;
+        height: 40vh !important;
+    }
+
+    /* 3. SHIFT CHAT & UI: ANCHOR TO EDGES */
+    #ui-panel {
+        left: 1vw !important;    /* Stick to the far left */
+        width: 49vw !important;  /* Make it narrower to stay out of the way */
+        right: auto !important;
+    }
+
+    #chat-panel {
+        left: 50vw !important;   /* Stick to the far right */
+        width: 49vw !important;  /* Shifted left by anchoring to the right edge */
+        right: auto !important;
+    }
+
+    /* 4. COMPACT BUTTONS (Prevent them from pushing panel widths) */
+    button, input {
+        padding: 4px !important;
+        font-size: 10px !important; /* Smaller text so buttons don't grow */
+        width: 100% !important;
+        white-space: nowrap !important; /* Prevent text from wrapping and making buttons tall */
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* 5. FORCE QUICK CHAT INTO SMALLER BUTTONS */
+    .quick-chat-btns button {
+        font-size: 9px !important;
+        padding: 1px !important;
+    }
+
+    /* 4. PREVENT QUICK CHAT OVERLAP */
+    .quick-chat-btns {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* Forces 2 columns */
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    /* 5. FONT & BUTTON SQUEEZE */
+    #ui-panel h2, #chat-panel h2 { font-size: 0.8rem !important; margin: 0 0 4px 0 !important; }
+    #ui-panel p, span { font-size: 11px !important; }
+
+    #diceIcon { font-size: 18px !important; }
+
+    /* Hide media to match reference */
+    #media-panel { display: none !important; }
+    .drag-handle { display: none !important; }
+    /* 5. FIX SQUISHED ROLL BUTTON */
+    #ui-panel button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 35px !important;    /* Forces it to be tall enough for a thumb tap */
+        padding: 6px 4px !important;    /* Gives it vertical breathing room */
+        white-space: nowrap !important; /* Stops the text from breaking onto two lines */
+        gap: 0px !important;            /* Creates perfect spacing between the Dice Icon and the Text */
+    }
+
+    /* Update the Dice Icon to match the new Flexbox layout */
+    #diceIcon {
+        font-size: 20px !important; 
+        margin: 6 !important; /* We remove margin because 'gap' handles the spacing now */
+    }
+}
