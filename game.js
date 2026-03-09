@@ -349,6 +349,7 @@ class  LudoGame extends Phaser.Scene {
 
     // --- MULTIPLAYER DICE LOGIC ---
     rollFromUI() {
+        
         // ⛔ Prevent rolling if it's not your turn
         if (window.myPlayerId !== this.currentPlayerIndex) {
             console.log("It is not your turn!");
@@ -447,6 +448,7 @@ class  LudoGame extends Phaser.Scene {
         if (rollBtn && window.myPlayerId === this.currentPlayerIndex) {
             rollBtn.disabled = false;
         }
+        window.startDiceTimer();
     }
 
     // Called when the server tells us another player rolled
@@ -479,6 +481,7 @@ class  LudoGame extends Phaser.Scene {
     // --- UPDATED TRYMOVE (Cheating Prevention) ---
     // --- UPDATED TRYMOVE (Fix Lane Entry) ---
     async tryMove(piece, isRemote = false) {
+        window.stopDiceTimer();
         let player = this.players[piece.playerId];
 
         // --- 🔒 CLICK RESTRICTION LOGIC ---
@@ -854,6 +857,7 @@ class  LudoGame extends Phaser.Scene {
 
     nextTurn() {
         // 🔥 FIX: Always reset dice value and moving state when a turn ends
+        window.stopDiceTimer();
         this.diceValue = 0;
         this.isMoving = false;
         
@@ -878,9 +882,11 @@ class  LudoGame extends Phaser.Scene {
 
         this.updateTurnUI();
         this.triggerBotTurn();
+        window.startDiceTimer();
     }
 
     updateTurnUI() {
+        window.stopDiceTimer();
         const playerColor = this.colors[this.currentPlayerIndex];
         const playerObj = this.players[this.currentPlayerIndex];
         const turnText = document.getElementById("turnDisplay");
@@ -893,6 +899,7 @@ class  LudoGame extends Phaser.Scene {
         if (window.myPlayerId === this.currentPlayerIndex && !playerObj.isBot) {
             rollBtn.style.display = "block";
             turnText.innerText += " (YOU)";
+            window.startDiceTimer();
             if (!this.isMoving) rollBtn.disabled = false; 
         } else {
             rollBtn.style.display = "none";
@@ -903,6 +910,7 @@ class  LudoGame extends Phaser.Scene {
         rollBtn.style.boxShadow = `0 10px 20px ${hexColor}44`;
         turnText.style.color = hexColor;
         turnText.style.textShadow = `0 0 10px ${hexColor}66`;
+        window.startDiceTimer();
     }
 
     triggerBotTurn() {
@@ -1249,3 +1257,62 @@ function startPhaserGame() {
         scene: LudoGame
     });
 }
+/* =========================================================
+   ⏱️ GLOBAL TIMER FUNCTIONS (OUTSIDE THE CLASS)
+   ========================================================= */
+window.diceTimerInterval = null;
+
+// 👇 The exact ID from your index.html 👇
+const TARGET_CONTAINER_ID = "diceDisplay"; 
+
+window.startDiceTimer = function() {
+    window.stopDiceTimer(); // Clear old timers
+    
+    // Make sure this targets your specific container (e.g., "diceDisplay")
+    const timerBox = document.getElementById("diceDisplay"); 
+    if (!timerBox) return;
+    
+    timerBox.classList.add("timer-active");
+    timerBox.style.setProperty('--timer-progress', '0%');
+    
+    let elapsed = 0;
+    const totalTime = 30000; // 30 seconds
+    
+    window.diceTimerInterval = setInterval(() => {
+        elapsed += 50;
+        let percent = (elapsed / totalTime) * 100;
+        timerBox.style.setProperty('--timer-progress', percent + '%');
+        
+        if (elapsed >= totalTime) {
+            window.stopDiceTimer();
+            
+            if(window.gameScene) {
+                // 👇 CRITICAL FIX: Only the player whose turn it ACTUALLY is will execute the auto-roll/skip.
+                // Everyone else will just see the timer disappear.
+                if (window.myPlayerId === window.gameScene.currentPlayerIndex) {
+                    const btn = document.getElementById("rollBtn");
+                    
+                    if (btn && !btn.disabled) {
+                        console.log("Time up for rolling! Auto-rolling...");
+                        window.gameScene.rollFromUI(); 
+                    } else {
+                        console.log("Time up for moving! Skipping turn...");
+                        if (typeof window.gameScene.nextTurn === 'function') {
+                            window.gameScene.nextTurn(); 
+                        }
+                    }
+                }
+            }
+        }
+    }, 50);
+};
+
+window.stopDiceTimer = function() {
+    clearInterval(window.diceTimerInterval);
+    
+    const timerBox = document.getElementById(TARGET_CONTAINER_ID);
+    if (timerBox) {
+        timerBox.classList.remove("timer-active");
+        timerBox.style.setProperty('--timer-progress', '0%');
+    }
+};
